@@ -10,7 +10,7 @@
 ├─ src/
 │  ├─ aislides/
         main.py # basic entrypoint
-        config/ # env var loading code
+        config/ # env var loading code and logging
         core/
             models/ # data structures for slide components
             llm/ # llm wrappers
@@ -19,7 +19,7 @@
                 tex/
                 pptx/
                 pdf/
-        api/ # endpoints
+        api/ # endpoints (explore gRPC)
 ├─ tests/
 │  ├─ aislides/
         end_to_end.py
