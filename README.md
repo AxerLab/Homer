@@ -6,7 +6,7 @@
 - TeX to export
 ### Milestone
 - First working prototype 
-
+- Pydantic-ai
 ## V0.1 - Alpha:
 ### Tasks
 - Iterative PPT enhancement (page level editing)
