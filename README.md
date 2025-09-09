@@ -9,7 +9,7 @@
 
 ## V0.1 - Alpha:
 ### Tasks
-- Iterative PPT enhancement
+- Iterative PPT enhancement (page level editing)
 - Preview (UI interface)
 ## V0.2
 ### Tasks
