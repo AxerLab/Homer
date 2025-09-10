@@ -1,6 +1,5 @@
 import logging
 import sys
-from ecs_logging import StdlibFormatter
 import colorlog
 
 # Create the logger
@@ -22,14 +21,9 @@ console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(color_formatter)
 
-# ===== ECS JSON Logs (for ELK/APM) =====
-ecs_handler = logging.FileHandler("ecs-logs.json")
-ecs_handler.setLevel(logging.INFO)
-ecs_handler.setFormatter(StdlibFormatter())
 
 # ===== Add Handlers to Logger =====
 logger.addHandler(console_handler)
-logger.addHandler(ecs_handler)
 
 # ===== Test Logs =====
 # logger.debug("Debug message")

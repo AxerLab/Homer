@@ -7,6 +7,7 @@
 ### Milestone
 - First working prototype 
 - Pydantic-ai
+- provider object to be defined in config
 ## V0.1 - Alpha:
 ### Tasks
 - Iterative PPT enhancement (page level editing)
