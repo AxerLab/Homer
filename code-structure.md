@@ -14,6 +14,9 @@
         core/
             models/ # data structures for slide components
             llm/ # llm wrappers
+            agent/ # pydantic agent definitions
+                agent.py # core agent initilization
+                prompts.py # agent prompts
             slide_generator/ # slide generator code (prompt to JSON)
             engines/
                 tex/
