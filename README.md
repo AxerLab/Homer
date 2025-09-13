@@ -42,3 +42,6 @@
 ## V0.9
 
 ## V1.0 - Stable
+
+# Working models
+- llama-3.3-70b-versatile

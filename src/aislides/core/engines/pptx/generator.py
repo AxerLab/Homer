@@ -33,9 +33,10 @@ class PPTXGenerator:
                     p = text_frame.add_paragraph()
                     p.text = text.para
                 if text.bullet:
-                    p = text_frame.add_paragraph()
-                    p.text = '\n'.join(text.bullet)
-                    p.level = 1
+                    for point in text.bullet:
+                        p = text_frame.add_paragraph()
+                        p.text = point
+                        p.level = 1
 
 
     def add_title_slide(self, title: str, subtitle: str):
