@@ -38,11 +38,6 @@ class SlidePresentation(BaseModel):
         ]:
             return False
 
-        # Check for conclusion slide at the end
-        last_slide = self.slides[-1]
-        if last_slide.layout != SlideLayout.CONCLUSION:
-            return False
-
         # Check for reasonable slide transitions
         for i in range(1, len(self.slides)):
             prev_layout = self.slides[i - 1].layout

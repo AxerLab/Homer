@@ -1,6 +1,5 @@
-from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from src.aislides.core.models.content.slide_content import SlideContent
 from src.aislides.core.models.layouts.slide_layout import SlideLayout
 
@@ -11,10 +10,13 @@ class Slide(BaseModel):
         ..., description="The title of the slide", min_length=1, max_length=200
     )
     content: SlideContent = Field(..., description="The content of the slide")
-    layout: SlideLayout = Field(..., description="The layout type for the slide")
-    image: Optional[str] = Field(
-        None, description="Optional image description or URL", max_length=500
+    layout: SlideLayout = Field(
+        ..., 
+        description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
     )
+    # image: Optional[str] = Field(
+    #     None, description="Optional image description or URL", max_length=500
+    # )
 
     @field_validator("title")
     @classmethod
@@ -24,16 +26,60 @@ class Slide(BaseModel):
             raise ValueError("Slide title cannot be empty")
         return v.strip()
 
-    @field_validator("image")
-    @classmethod
-    def validate_image(cls, v: Optional[str]) -> Optional[str]:
-        """Validate image description."""
-        if v is not None:
-            if not isinstance(v, str):
-                raise ValueError("Image description must be a string")
-            if len(v.strip()) == 0:
-                return None  # Convert empty string to None
-            return v.strip()
-        return v
+    # @field_validator("image")
+    # @classmethod
+    # def validate_image(cls, v: Optional[str]) -> Optional[str]:
+    #     """Validate image description."""
+    #     if v is not None:
+    #         if not isinstance(v, str):
+    #             raise ValueError("Image description must be a string")
+    #         if len(v.strip()) == 0:
+    #             return None  # Convert empty string to None
+    #         return v.strip()
+    #     return v
 
+    @model_validator(mode="after")
+    def validate_layout(self) -> "Slide":
+        """Validate slide layout."""
+        if self.layout == SlideLayout.COMPARISON:
+            if not self.content.comparison:
+                raise ValueError(f"Slides with layout '{self.layout}' must have 'comparison' content")
+            if self.content.text or self.content.text2:
+                raise ValueError(f"Slides with layout '{self.layout}' cannot have 'text', 'text2' content")
+        else:
+            if self.content.comparison:
+                raise ValueError(f"Slides with layout '{self.layout}' cannot have 'comparison' content")
+        
+        if self.layout == SlideLayout.TITLE_AND_CONTENT:
+            if not self.content.text:
+                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content")
+            if not self.content.text.para and not self.content.text.bullet:
+                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content with paragraph or bullet points")
+            
+    
+        if self.layout == SlideLayout.TITLE or self.layout == SlideLayout.TITLE_ONLY:
+            if not self.title or not self.title.strip():
+                raise ValueError("Title slides must have a non-empty title")
+        
+        if self.layout == SlideLayout.SECTION_HEADER:
+            if not self.content.text:
+                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content")
+            if self.content.text.para is None or self.content.text.bullet is not None:
+                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content with paragraph only")
 
+        if self.layout == SlideLayout.TWO_CONTENT:
+            if not self.content.text or not self.content.text2:
+                raise ValueError(f"Slides with layout '{self.layout}' must have both 'text' and 'text2' content")
+        
+        
+        if self.layout == SlideLayout.BLANK:
+            if self.title or self.content.text or self.content.text2:
+                raise ValueError(f"Slides with layout '{self.layout}' must not have any of 'title', 'text', 'text2' content")
+            if self.content.comparison:
+                raise ValueError(f"Slides with layout '{self.layout}' cannot have 'comparison' content")
+
+        
+        if self.layout == SlideLayout.CONTENT_WITH_CAPTION:
+            if not self.content.text or not self.content.text2:
+                raise ValueError(f"Slides with layout '{self.layout}' must have both 'text', 'text2' content")
+        return self

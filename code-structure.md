@@ -17,6 +17,7 @@
             agent/ # pydantic agent definitions
                 agent.py # core agent initilization
                 prompts.py # agent prompts
+            tools/
             slide_generator/ # slide generator code (prompt to JSON)
             engines/
                 tex/
