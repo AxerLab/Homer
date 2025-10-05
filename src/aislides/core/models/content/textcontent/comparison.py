@@ -38,8 +38,8 @@ class Comparison(BaseModel):
     def check_bullet_points_equal(self) -> "Comparison":
         """Ensure both sides have the same number of bullet points."""
         if self.left_content and self.right_content:
-            left_bullets = self.left_content.bullet or []
-            right_bullets = self.right_content.bullet or []
+            left_bullets = self.left_content.bullet
+            right_bullets = self.right_content.bullet
             if len(left_bullets) != len(right_bullets):
                 raise ValueError("Both sides must have the same number of bullet points")
         return self

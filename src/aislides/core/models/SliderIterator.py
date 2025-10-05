@@ -13,5 +13,6 @@ class SlideIterator(BaseModel):
     slides_after: Optional[List[Slide]] = Field(
         None, description="Slides present after the current slide to be edited. This is required for context and the edited output must be coherent with these slides."
     )
+    outline: str = Field(..., description="The full outline of the presentation for context")
     instructions: str = Field(..., description="Instructions (user prompt) for modifying the slide")
     prompt: str = Field(..., description="The full prompt used to generate the presentation")

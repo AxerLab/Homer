@@ -61,10 +61,16 @@ class Slide(BaseModel):
             if not self.title or not self.title.strip():
                 raise ValueError("Title slides must have a non-empty title")
         
+        if self.layout == SlideLayout.TITLE_ONLY:
+            if self.content.text or self.content.text2:
+                raise ValueError(f"Slides with layout '{self.layout}' must not have any of 'text', 'text2' content")
+            if self.content.comparison:
+                raise ValueError(f"Slides with layout '{self.layout}' cannot have 'comparison' content")
+        
         if self.layout == SlideLayout.SECTION_HEADER:
             if not self.content.text:
                 raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content")
-            if self.content.text.para is None or self.content.text.bullet is not None:
+            if self.content.text.para is None or self.content.text.bullet != []:
                 raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content with paragraph only")
 
         if self.layout == SlideLayout.TWO_CONTENT:
