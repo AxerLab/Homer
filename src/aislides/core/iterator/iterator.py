@@ -2,6 +2,7 @@ from src.aislides.core.models.SliderIterator import SlideIterator
 from src.aislides.core.models.presentation.presentation import SlidePresentation
 from src.aislides.core.agent.agent import interator_agent
 from src.aislides.config.logs import logger
+from src.aislides.core.memory.iteration_memory import iteration_memory
 
 from pydantic_ai import ModelHTTPError
 
@@ -49,15 +50,36 @@ def regenerate_slide(
     )
     logger.debug(slider_iterator.model_dump_json())
 
+    agent_result = None
     while True:
         try:
-            modified_slide = interator_agent.run_sync(slider_iterator.model_dump_json())
+            agent_result = interator_agent.run_sync(
+                slider_iterator.model_dump_json(),
+                message_history=iteration_memory.get_history(
+                    original_prompt=original_prompt, slide_index=slide_index
+                ),
+            )
             break
         except ModelHTTPError as e:
             logger.error(f"Error regenerating slide: {e.message}")
-            slider_iterator.instructions += e.message + " \nSolution: If the content becomes too long, split it into multiple slides."
+            slider_iterator.instructions += (
+                e.message
+                + " \nSolution: If the content becomes too long, split it into multiple slides."
+            )
+
+    logger.debug(f"Agent result: {agent_result.all_messages_json()}")
+
+    if agent_result is None:
+        raise RuntimeError("Failed to generate updated slide after retries.")
+
+    iteration_memory.record_iteration(
+        original_prompt=original_prompt,
+        slide_index=slide_index,
+        edit_prompt=edit_prompt,
+        messages=agent_result.new_messages(),
+    )
 
     updated_slides = presentation.slides.copy()
-    updated_slides[slide_index:slide_index+1] = modified_slide.output
+    updated_slides[slide_index : slide_index + 1] = agent_result.output
 
     return SlidePresentation(slides=updated_slides)
