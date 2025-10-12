@@ -43,7 +43,7 @@ def generate_presentation(
                 + "\nSolution: If the content becomes too long, increase the number of slides or shorten the content."
             )
 
-    logger.debug(f"Agent result: {agent_result.all_messages_json()}")
+    # logger.debug(f"Agent result: {agent_result.all_messages_json()}")
 
     if agent_result is None:
         raise RuntimeError("Failed to generate presentation after retries.")
