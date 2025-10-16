@@ -21,3 +21,16 @@ Guidelines:
 6. Keep paragraphs concise (1-3 sentences, max 300 words)
 7. If content is too big for one slide, only then split the content into multiple slides
 """
+
+tex_generator_system_prompt = """ You are an expert in LaTeX Beamer.  
+Guidelines:
+- Input: a JSON describing presentation structure.  
+- Output: a valid .tex file following that structure.  
+- Use metadata for \title, \author, \date, and include a title page.  
+- Convert each section to \section{}.  
+- Convert each slide to \begin{frame}{...}\end{frame}.  
+- Format slide content as bullet lists when appropriate.  
+- Escape special LaTeX characters properly.  
+- Output only the complete LaTeX code, with no comments or explanations.
+- Ensure the LaTeX code compiles without errors.
+"""
