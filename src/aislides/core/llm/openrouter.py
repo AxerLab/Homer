@@ -12,10 +12,11 @@ client = instructor.from_provider(
 )
 
 
-async def call_structured_model(messages, response_model):
-    response = await client.chat.completions.create(
+def call_structured_model(messages, response_model):
+    response = client.chat.completions.create(
         messages=messages,
         response_model=response_model,
         extra_body={"provider": {"require_parameters": True}},
+        max_retries=3,
     )
     return response

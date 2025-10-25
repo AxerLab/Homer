@@ -11,6 +11,6 @@ if not GROQ_API_KEY and not OPENROUTER_API_KEY:
 
 OPENROUTER_API_BASE = "https://openrouter.ai/api/v1"
 
-MODEL = "openrouter/google/gemini-2.0-flash-lite-001"
+MODEL = "openrouter/qwen/qwen3-4b:free"
 
 model_provider = GroqProvider(api_key=GROQ_API_KEY, base_url="https://api.groq.com/")
