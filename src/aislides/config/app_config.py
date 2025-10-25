@@ -8,6 +8,6 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set.")
 
-MODEL = "openai/gpt-oss-20b"
+MODEL = "llama-3.1-8b-instant"
 
 model_provider = GroqProvider(api_key=GROQ_API_KEY, base_url="https://api.groq.com/")
