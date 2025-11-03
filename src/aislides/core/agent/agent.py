@@ -2,7 +2,11 @@ from typing import List
 from src.aislides.core.llm import model
 from src.aislides.core.models.presentation.presentation import SlidePresentation
 from pydantic_ai import Agent, NativeOutput
-import .prompts
+from .prompts import (
+    generator_system_prompt,
+    iterator_system_prompt,
+    tex_generator_system_prompt,
+)
 from src.aislides.core.models.slide.slide import Slide
 
 agent = Agent(
