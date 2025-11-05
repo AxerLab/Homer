@@ -30,8 +30,6 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
     
     title = presentation.slides[0].title if presentation.slides else "Presentation"
     doc.preamble.append(NoEscape(f'\\title{{{escape_latex(title)}}}'))
-    doc.preamble.append(NoEscape(r'\author{AI Slides}'))
-    doc.preamble.append(NoEscape(r'\date{\today}'))
     
     doc.append(NoEscape(r'\frame{\maketitle}'))
 
