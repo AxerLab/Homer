@@ -10,8 +10,13 @@ class TextContent(BaseModel):
     para: Optional[str] = Field(
         None, description="Paragraph content for the slide", max_length=MAX_PARAGRAPH_LENGTH
     )
-    bullet: BulletList = Field( # type: ignore
-        [], description=f"List of bullet points. Max {MAX_BULLET_POINTS} items. If there are more than {MAX_BULLET_POINTS} points, consider splitting into multiple slides."
+    bullet: Optional[BulletList] = Field(  # type: ignore
+        default=[],
+        description=(
+            f"List of bullet points. Max {MAX_BULLET_POINTS} items."
+            "If there are more than {MAX_BULLET_POINTS} points, consider"
+            "splitting into multiple slides."
+        ),
     )
 
     @model_validator(mode="after")
@@ -25,18 +30,18 @@ class TextContent(BaseModel):
     @classmethod
     def validate_bullet_points(cls, v: Optional[List[str]]) -> Optional[List[str]]:
         """Validate bullet points structure and content."""
+        if v is None:
+            return []
         if v != []:
             if not isinstance(v, list):
                 raise ValueError("Bullet points must be a list")
-            if len(v) == 0:
-                raise ValueError("Bullet points list cannot be empty")
             if len(v) > MAX_BULLET_POINTS:
                 raise ValueError(f"Too many bullet points (max {MAX_BULLET_POINTS})")
             for item in v:
                 if not isinstance(item, str) or len(item.strip()) == 0:
                     raise ValueError("Each bullet point must be a non-empty string")
         return v
-    
+
     @field_validator("para")
     @classmethod
     def validate_paragraph(cls, v: Optional[str]) -> Optional[str]:

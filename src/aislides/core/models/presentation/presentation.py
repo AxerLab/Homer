@@ -44,10 +44,7 @@ class SlidePresentation(BaseModel):
             curr_layout = self.slides[i].layout
 
             # Avoid consecutive title_only slides
-            if (
-                prev_layout == SlideLayout.TITLE_ONLY
-                and curr_layout == SlideLayout.TITLE_ONLY
-            ):
+            if prev_layout == SlideLayout.TITLE_ONLY and curr_layout == SlideLayout.TITLE_ONLY:
                 return False
 
         return True
