@@ -1,56 +1,90 @@
 from pathlib import Path
-import json
-
-from src.aislides.core.generator.generator import generate_presentation
-from src.aislides.core.agent.agent import tex_agent
 from pylatex import Document, NoEscape
+from src.aislides.core.generator.generator import generate_presentation
+from src.aislides.core.models.presentation.presentation import SlidePresentation
+from src.aislides.core.models.layouts.slide_layout import SlideLayout
+from src.aislides.core.models.content.textcontent.textcontent import TextContent
+
+def escape_latex(text: str) -> str:
+    if text is None:
+        return ""
+    return text.replace('&', r'\&').replace('%', r'\%').replace('$', r'\$').replace('#', r'\#').replace('_', r'\_').replace('{', r'\{').replace('}', r'\}')
+
+def content_to_latex(content: TextContent) -> str:
+    latex = ""
+    if content.para:
+        latex += escape_latex(content.para) + "\n"
+    if content.bullet:
+        latex += "\\begin{itemize}\n"
+        for item in content.bullet:
+            latex += f"\\item {escape_latex(item)}\n"
+        latex += "\\end{itemize}\n"
+    return latex
 
 def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", pdf_basename: str = "test"):
-    # 1) generate SlidePresentation using existing generator
     presentation = generate_presentation(original_prompt=original_prompt, user_prompt=user_prompt)
 
-    # 2) serialize to JSON for tex_agent
-    if hasattr(presentation, "model_dump_json"):
-        presentation_json = presentation.model_dump_json()
-    else:
-        presentation_json = json.dumps(presentation)
+    doc = Document(documentclass='beamer')
+    doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
+    doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
+    
+    title = presentation.slides[0].title if presentation.slides else "Presentation"
+    doc.preamble.append(NoEscape(f'\\title{{{escape_latex(title)}}}'))
+    doc.preamble.append(NoEscape(r'\author{AI Slides}'))
+    doc.preamble.append(NoEscape(r'\date{\today}'))
+    
+    doc.append(NoEscape(r'\frame{\maketitle}'))
 
-    # 3) get LaTeX source from tex_agent
-    tex_source = tex_agent.run_sync(presentation_json)
-    tex_source = str(tex_source)
+    for slide in presentation.slides:
+        doc.append(NoEscape(f'\\begin{{frame}}{{{escape_latex(slide.title)}}}'))
+        
+        if slide.layout == SlideLayout.TITLE_AND_CONTENT:
+            if slide.content.text:
+                doc.append(NoEscape(content_to_latex(slide.content.text)))
+        
+        elif slide.layout == SlideLayout.TWO_CONTENT:
+            doc.append(NoEscape(r'\begin{columns}[T]'))
+            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            if slide.content.text:
+                doc.append(NoEscape(content_to_latex(slide.content.text)))
+            doc.append(NoEscape(r'\end{column}'))
+            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            if slide.content.text2:
+                doc.append(NoEscape(content_to_latex(slide.content.text2)))
+            doc.append(NoEscape(r'\end{column}'))
+            doc.append(NoEscape(r'\end{columns}'))
 
-    # 4) write raw tex output for inspection
-    Path(tex_path).write_text(tex_source, encoding="utf-8")
+        elif slide.layout == SlideLayout.COMPARISON:
+            doc.append(NoEscape(r'\begin{columns}[T]'))
+            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            if slide.content.comparison:
+                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.left_title)}}}'))
+                doc.append(NoEscape(content_to_latex(slide.content.comparison.left_content)))
+            doc.append(NoEscape(r'\end{column}'))
+            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            if slide.content.comparison:
+                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.right_title)}}}'))
+                doc.append(NoEscape(content_to_latex(slide.content.comparison.right_content)))
+            doc.append(NoEscape(r'\end{column}'))
+            doc.append(NoEscape(r'\end{columns}'))
+        
+        elif slide.layout == SlideLayout.SECTION_HEADER:
+            if slide.content.text:
+                doc.append(NoEscape(content_to_latex(slide.content.text)))
+        
+        elif slide.layout == SlideLayout.CONTENT_WITH_CAPTION:
+            if slide.content.text:
+                doc.append(NoEscape(content_to_latex(slide.content.text)))
+            if slide.content.text2:
+                doc.append(NoEscape(r'{\tiny\par}'))
+                doc.append(NoEscape(content_to_latex(slide.content.text2)))
+        
+        doc.append(NoEscape(r'\end{frame}'))
 
-    # 5) compile with pylatex (uses pdflatex internally)
-    # If the agent produced a full document, try to extract preamble and body.
-    if "\\begin{document}" in tex_source:
-        preamble, rest = tex_source.split("\\begin{document}", 1)
-        body = rest
-        if "\\end{document}" in body:
-            body, _ = body.split("\\end{document}", 1)
-
-        # remove any \documentclass lines to avoid duplicate documentclass entries
-        preamble_lines = [
-            line for line in preamble.splitlines() if not line.strip().startswith("\\documentclass")
-        ]
-        preamble_clean = "\n".join(preamble_lines).strip()
-
-        doc = Document(pdf_basename)
-        if preamble_clean:
-            # insert remaining preamble raw (packages / defs)
-            doc.preamble.append(NoEscape(preamble_clean))
-        doc.append(NoEscape(body))
-    else:
-        # assume tex_source is a document body; wrap in a basic Document
-        doc = Document(pdf_basename)
-        doc.append(NoEscape(tex_source))
-
-    # generate pdf using pylatex (which invokes pdflatex internally)
     doc.generate_pdf(pdf_basename, compiler="pdflatex", clean_tex=False)
+    doc.generate_tex(tex_path)
 
     return Path(f"{pdf_basename}.pdf").resolve()
-
 
 if __name__ == "__main__":
     import sys
