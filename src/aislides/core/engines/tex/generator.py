@@ -56,13 +56,13 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
             doc.append(NoEscape(r'\begin{columns}[T]'))
             doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
             if slide.content.comparison:
-                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.left_title)}}}'))
-                doc.append(NoEscape(content_to_latex(slide.content.comparison.left_content)))
+                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.left_title)}}}')) # type: ignore
+                doc.append(NoEscape(content_to_latex(slide.content.comparison.left_content))) # type: ignore
             doc.append(NoEscape(r'\end{column}'))
             doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
             if slide.content.comparison:
-                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.right_title)}}}'))
-                doc.append(NoEscape(content_to_latex(slide.content.comparison.right_content)))
+                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.right_title)}}}')) # type: ignore
+                doc.append(NoEscape(content_to_latex(slide.content.comparison.right_content))) # type: ignore
             doc.append(NoEscape(r'\end{column}'))
             doc.append(NoEscape(r'\end{columns}'))
         
