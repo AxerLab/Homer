@@ -6,11 +6,11 @@ from src.aislides.core.engines.pptx.json_handler import structure_to_ppt
 from src.aislides.config.app_config import GROQ_API_KEY
 from src.aislides.config.logs import logger
 
-client = Groq(
+_client = Groq(
     api_key=GROQ_API_KEY,
 )
 
-client = instructor.from_groq(client, mode=instructor.Mode.TOOLS)
+client: instructor.Instructor = instructor.from_groq(_client, mode=instructor.Mode.TOOLS)
 
 def generate():
     messages=[
@@ -20,7 +20,7 @@ def generate():
         }
     ]
 
-    resp: SlidePresentation = call_structured_model(messages, SlidePresentation) # type: ignore
+    resp: SlidePresentation = call_structured_model(client, messages, SlidePresentation)
     logger.info(f"Response: {resp.model_dump_json(indent=2)}")
 
     structure_to_ppt(resp, save_path="test.pptx")

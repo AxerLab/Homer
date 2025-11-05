@@ -12,11 +12,12 @@ client = instructor.from_provider(
 )
 
 
-def call_structured_model(messages, response_model):
+def call_structured_model(client: instructor.Instructor, messages, response_model):
     response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
         messages=messages,
         response_model=response_model,
-        extra_body={"provider": {"require_parameters": True}},
+        # extra_body={"provider": {"require_parameters": True}},
         max_retries=3,
     )
     return response
