@@ -63,6 +63,9 @@ if st.session_state.mode == "main":
         with open(st.session_state.pdf_path, "rb") as f:
             st.download_button("⬇️ Download PDF", f, file_name=os.path.basename(st.session_state.pdf_path))
 
+        # Display the PDF using st.pdf
+        st.pdf(st.session_state.pdf_path)
+
 
 # --- Edit slide mode ---
 elif st.session_state.mode == "edit_slide":

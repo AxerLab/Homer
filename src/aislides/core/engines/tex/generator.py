@@ -4,21 +4,28 @@ from src.aislides.core.generator.generator import generate_presentation
 from src.aislides.core.models.presentation.presentation import SlidePresentation
 from src.aislides.core.models.layouts.slide_layout import SlideLayout
 from src.aislides.core.models.content.textcontent.textcontent import TextContent
+from typing import Union
 
 def escape_latex(text: str) -> str:
     if text is None:
         return ""
     return text.replace('&', r'\&').replace('%', r'\%').replace('$', r'\$').replace('#', r'\#').replace('_', r'\_').replace('{', r'\{').replace('}', r'\}')
 
-def content_to_latex(content: TextContent) -> str:
+def content_to_latex(content: Union[TextContent, list]) -> str:
     latex = ""
-    if content.para:
-        latex += escape_latex(content.para) + "\n"
-    if content.bullet:
+    if isinstance(content, list):
         latex += "\\begin{itemize}\n"
-        for item in content.bullet:
+        for item in content:
             latex += f"\\item {escape_latex(item)}\n"
         latex += "\\end{itemize}\n"
+    else:
+        if content.para:
+            latex += escape_latex(content.para) + "\n"
+        if content.bullet:
+            latex += "\\begin{itemize}\n"
+            for item in content.bullet:
+                latex += f"\\item {escape_latex(item)}\n"
+            latex += "\\end{itemize}\n"
     return latex
 
 def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", pdf_basename: str = "test"):
