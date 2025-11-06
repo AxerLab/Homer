@@ -34,6 +34,7 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
     doc = Document(documentclass='beamer')
     doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
     doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
+    doc.preamble.append(NoEscape(r'\DeclareUnicodeCharacter{202F}{\,}'))
     
     title = presentation.slides[0].title if presentation.slides else "Presentation"
     doc.preamble.append(NoEscape(f'\\title{{{escape_latex(title)}}}'))

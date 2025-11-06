@@ -59,12 +59,17 @@ if st.session_state.mode == "main":
             st.rerun()
 
     if st.session_state.pdf_path:
-        st.success(f"PDF generated successfully!")
+        st.success("PDF generated successfully!")
         with open(st.session_state.pdf_path, "rb") as f:
-            st.download_button("⬇️ Download PDF", f, file_name=os.path.basename(st.session_state.pdf_path))
+            pdf_bytes = f.read()
+            st.pdf(pdf_bytes, height=700)  # Displays PDF inline in Streamlit
 
-        # Display the PDF using st.pdf
-        st.pdf(st.session_state.pdf_path)
+        st.download_button(
+            "⬇️ Download PDF", 
+            pdf_bytes, 
+            file_name=os.path.basename(st.session_state.pdf_path)
+        )
+
 
 
 # --- Edit slide mode ---
