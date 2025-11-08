@@ -29,9 +29,13 @@ def content_to_latex(content: Union[TextContent, list]) -> str:
             latex += "\\end{itemize}\n"
     return latex
 
-def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", pdf_basename: str = "test"):
+def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex"):
     presentation = generate_presentation(original_prompt=original_prompt, user_prompt=user_prompt)
 
+    # Determine the base name for files from tex_path
+    p = Path(tex_path)
+    pdf_basename = p.stem
+    
     doc = Document(documentclass='beamer')
     doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
     doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
@@ -88,9 +92,11 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         
         doc.append(NoEscape(r'\end{frame}'))
 
-    doc.generate_tex(tex_path)
+    # generate_tex expects a path without the .tex extension
+    doc.generate_tex(pdf_basename)
     
-    tex_file = Path(tex_path)
+    # Reconstruct the full path to the .tex file for docker command
+    tex_file = Path(f"{pdf_basename}.tex")
     tex_dir = tex_file.parent.resolve()
     tex_filename = tex_file.name
     
