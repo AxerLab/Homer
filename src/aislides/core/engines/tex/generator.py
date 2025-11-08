@@ -5,6 +5,7 @@ from src.aislides.core.models.presentation.presentation import SlidePresentation
 from src.aislides.core.models.layouts.slide_layout import SlideLayout
 from src.aislides.core.models.content.textcontent.textcontent import TextContent
 from typing import Union
+import subprocess
 
 def escape_latex(text: str) -> str:
     if text is None:
@@ -87,13 +88,33 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         
         doc.append(NoEscape(r'\end{frame}'))
 
-    doc.generate_pdf(pdf_basename, compiler="pdflatex", clean_tex=False)
     doc.generate_tex(tex_path)
+    
+    tex_file = Path(tex_path)
+    tex_dir = tex_file.parent.resolve()
+    tex_filename = tex_file.name
+    
+    docker_image = "blang/latex:ubuntu"
+    
+    command = [
+        "docker", "run", "--rm",
+        "-v", f"{tex_dir}:/workdir",
+        docker_image,
+        "pdflatex",
+        "-output-directory=/workdir",
+        f"/workdir/{tex_filename}"
+    ]
+    
+    try:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        print("Error during LaTeX compilation:")
+        print(e.stdout)
+        print(e.stderr)
+        raise
+    except FileNotFoundError:
+        print("Error: Docker is not installed or not in the system's PATH.")
+        raise
 
     return Path(f"{pdf_basename}.pdf").resolve()
 
-if __name__ == "__main__":
-    import sys
-    prompt = " ".join(sys.argv[1:]) or "Generate a short 3-slide presentation about AI safety"
-    out_pdf = generate_tex_and_pdf(prompt, prompt)
-    print("Generated PDF:", out_pdf)
