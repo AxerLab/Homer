@@ -1,3 +1,29 @@
+# Tech Stack
+
+## Backend
+- **Python** with Pydantic-AI for agent workflows
+- **Provider object** defined in config for LLM integration
+- **Supported Models**: llama-3.3-70b-versatile
+
+## Frontend
+- **React 18+** with TypeScript for type-safe component development
+- **Vite** as build tool and dev server for fast HMR and optimized production builds
+- **TailwindCSS** for utility-first styling and responsive design
+- **TanStack Router** for type-safe routing with data loading and caching capabilities
+- **shadcn/ui + Radix UI** for accessible, composable, and customizable UI components
+- **Node.js & npm** for package management and tooling
+
+### Color Palette
+The UI follows a modern, sleek AI SaaS aesthetic with darker tones and high contrast:
+- **Background**: `#0a0a0f` (deep slate) with `#13131a` (elevated surfaces)
+- **Primary**: `#6366f1` (vibrant indigo) for CTAs and highlights
+- **Secondary**: `#8b5cf6` (electric violet) for accents and hover states
+- **Accent**: `#14b8a6` (teal) for success states and secondary actions
+- **Text**: `#f8fafc` (off-white primary), `#94a3b8` (muted gray for secondary text)
+- **Border**: `#1e293b` (subtle slate) for dividers and component borders
+- **Destructive**: `#ef4444` (coral red) for errors and warnings
+- **Muted**: `#1e293b` with `#64748b` text for disabled/inactive states
+
 # Versions
 ## V0 - Prototype/PoC:
 ### Tasks
@@ -42,6 +68,3 @@
 ## V0.9
 
 ## V1.0 - Stable
-
-# Working models
-- llama-3.3-70b-versatile
