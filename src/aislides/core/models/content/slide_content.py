@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from .textcontent.textcontent import TextContent
 from .textcontent.comparison import Comparison
