@@ -61,17 +61,14 @@ def create_presentation(
             file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
             structure_to_ppt(generated_presentation, save_path=str(file_path))
         elif presentation.file_type == "pdf":
-            # Generate PDF with UUID name
+            # Generate PDF with UUID name in the PDF directory
+            pdf_output_path = str(PDF_DIR / db_presentation.id)
             pdf_path = generate_tex_and_pdf(
                 presentation.main_topic,
                 presentation.main_topic,
-                output_filename=f"{db_presentation.id}"
+                tex_path=f"{pdf_output_path}.tex",
+                output_filename=pdf_output_path
             )
-            # Move to proper directory if needed
-            if pdf_path:
-                final_path = PDF_DIR / f"{db_presentation.id}.pdf"
-                if not final_path.exists():
-                    Path(pdf_path).rename(final_path)
 
         return schemas.PresentationCreateResponse(id=db_presentation.id)
 

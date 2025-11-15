@@ -34,10 +34,13 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
 
     # Determine the base name for files from tex_path or use output_filename if provided
     if output_filename:
-        pdf_basename = output_filename
+        # If output_filename is a full path, use it as is
+        pdf_basename = Path(output_filename).stem
+        output_dir = Path(output_filename).parent
     else:
         p = Path(tex_path)
         pdf_basename = p.stem
+        output_dir = p.parent if p.parent != Path('.') else Path.cwd()
     
     doc = Document(documentclass='beamer')
     doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
@@ -96,10 +99,12 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         doc.append(NoEscape(r'\end{frame}'))
 
     # generate_tex expects a path without the .tex extension
-    doc.generate_tex(pdf_basename)
-    
+    # Generate tex file in the output directory
+    tex_output_path = output_dir / pdf_basename
+    doc.generate_tex(str(tex_output_path))
+
     # Reconstruct the full path to the .tex file for docker command
-    tex_file = Path(f"{pdf_basename}.tex")
+    tex_file = Path(f"{tex_output_path}.tex")
     tex_dir = tex_file.parent.resolve()
     tex_filename = tex_file.name
     
@@ -125,5 +130,5 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         print("Error: Docker is not installed or not in the system's PATH.")
         raise
 
-    return Path(f"{pdf_basename}.pdf").resolve()
+    return Path(output_dir / f"{pdf_basename}.pdf").resolve()
 
