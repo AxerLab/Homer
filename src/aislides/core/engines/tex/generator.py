@@ -29,12 +29,15 @@ def content_to_latex(content: Union[TextContent, list]) -> str:
             latex += "\\end{itemize}\n"
     return latex
 
-def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex"):
+def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", output_filename: str = None):
     presentation = generate_presentation(original_prompt=original_prompt, user_prompt=user_prompt)
 
-    # Determine the base name for files from tex_path
-    p = Path(tex_path)
-    pdf_basename = p.stem
+    # Determine the base name for files from tex_path or use output_filename if provided
+    if output_filename:
+        pdf_basename = output_filename
+    else:
+        p = Path(tex_path)
+        pdf_basename = p.stem
     
     doc = Document(documentclass='beamer')
     doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
