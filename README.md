@@ -10,8 +10,9 @@
 - **Vite** as build tool and dev server for fast HMR and optimized production builds
 - **TailwindCSS** for utility-first styling and responsive design
 - **TanStack Router** for type-safe routing with data loading and caching capabilities
-- **shadcn/ui + Radix UI** for accessible, composable, and customizable UI components
+- **MUI Material UI** for accessible, composable, and customizable UI components
 - **Node.js & npm** for package management and tooling
+- Other dependencies: three js (for 3D), framer (for parallax animations)
 
 ### Color Palette
 The UI follows a modern, sleek AI SaaS aesthetic with darker tones and high contrast:
@@ -68,3 +69,7 @@ The UI follows a modern, sleek AI SaaS aesthetic with darker tones and high cont
 ## V0.9
 
 ## V1.0 - Stable
+
+# Claude instructions
+start claude: `SHELL=/bin/bash claude`
+Note: API keys need to be given before this
