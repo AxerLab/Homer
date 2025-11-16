@@ -25,6 +25,17 @@ The UI follows a modern, sleek AI SaaS aesthetic with darker tones and high cont
 - **Destructive**: `#ef4444` (coral red) for errors and warnings
 - **Muted**: `#1e293b` with `#64748b` text for disabled/inactive states
 
+# Running the code
+Start the DB
+```bash
+docker-compose up
+```
+start the server
+```bash
+source .venv/bin/activate
+uvicorn src.aislides.main:app
+```
+
 # Versions
 ## V0 - Prototype/PoC:
 ### Tasks
