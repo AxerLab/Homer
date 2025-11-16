@@ -1,45 +1,54 @@
+import { Sparkles, FileText, Zap, Edit3, Download } from 'lucide-react';
+
 const MainView = () => {
   return (
-    <div className="h-full w-full flex flex-col bg-background">
+    <div className="h-full w-full flex flex-col bg-[#0a0a0f]">
       {/* Header with controls */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+      <header className="flex items-center justify-between px-6 py-5 border-b border-[#1e293b] flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-text-primary">
+          <div className="w-2 h-2 rounded-full bg-[#14b8a6] animate-pulse"></div>
+          <h1 className="text-lg font-bold text-[#f8fafc]">
             Presentation Workspace
           </h1>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto flex items-center justify-center p-6">
+      <div className="flex-1 overflow-y-auto flex items-center justify-center p-8">
         {/* Empty State - Placeholder for PromptInput (Phase 4) */}
         <div className="max-w-3xl w-full">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-text-primary mb-3">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] mb-6 shadow-lg shadow-[#6366f1]/30">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#f8fafc] mb-4 bg-gradient-to-r from-[#f8fafc] to-[#94a3b8] bg-clip-text text-transparent">
               Create Your AI-Powered Presentation
             </h2>
-            <p className="text-text-secondary text-base">
-              Describe your topic and let AI generate a professional presentation for you
+            <p className="text-[#94a3b8] text-lg max-w-2xl mx-auto">
+              Describe your topic and let AI generate a professional presentation for you in seconds
             </p>
           </div>
 
           {/* Placeholder for PromptInput component */}
-          <div className="bg-background-elevated border border-border rounded-lg p-4 mb-8">
+          <div className="bg-[#13131a] border border-[#1e293b] rounded-xl p-5 mb-8 hover:border-[#6366f1]/30 transition-all duration-200 shadow-xl">
             <textarea
-              className="w-full bg-transparent text-text-primary placeholder-text-muted resize-none outline-none text-sm"
-              rows={4}
+              className="w-full bg-transparent text-[#f8fafc] placeholder-[#64748b] resize-none outline-none text-base leading-relaxed"
+              rows={5}
               placeholder="Enter your presentation topic here... (e.g., 'Climate Change and Its Impact on Global Economy')"
             />
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center justify-between mt-5 pt-5 border-t border-[#1e293b]">
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 text-xs rounded-md bg-primary text-white font-medium hover:bg-primary-hover transition-colors">
+                <button className="group px-4 py-2 text-sm rounded-lg bg-[#6366f1] text-white font-medium hover:bg-[#5558e3] transition-all duration-200 flex items-center gap-2 shadow-lg shadow-[#6366f1]/20 hover:scale-[1.02] active:scale-[0.98]">
+                  <FileText className="w-4 h-4" />
                   PDF
                 </button>
-                <button className="px-3 py-1.5 text-xs rounded-md border border-border text-text-secondary hover:bg-muted transition-colors">
+                <button className="group px-4 py-2 text-sm rounded-lg border border-[#1e293b] text-[#94a3b8] hover:border-[#6366f1] hover:text-[#6366f1] hover:bg-[#1e293b] transition-all duration-200 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
                   PPTX
                 </button>
               </div>
-              <button className="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-sm rounded-md font-medium transition-colors">
+              <button className="group px-6 py-2.5 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#5558e3] hover:to-[#7c4de7] text-white text-sm rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg shadow-[#6366f1]/30 hover:scale-[1.02] active:scale-[0.98]">
+                <Sparkles className="w-4 h-4" />
                 Generate
               </button>
             </div>
@@ -47,32 +56,26 @@ const MainView = () => {
 
           {/* Quick Tips */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 flex-shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="text-center group">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[#6366f1]/20 to-[#6366f1]/5 border border-[#6366f1]/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                <Zap className="w-7 h-7 text-[#6366f1]" />
               </div>
-              <h3 className="text-sm font-medium text-text-primary mb-1">Fast Generation</h3>
-              <p className="text-xs text-text-muted">AI creates your slides in seconds</p>
+              <h3 className="text-base font-semibold text-[#f8fafc] mb-2">Fast Generation</h3>
+              <p className="text-sm text-[#94a3b8] leading-relaxed">AI creates your slides in seconds</p>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 flex-shrink-0 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+            <div className="text-center group">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[#14b8a6]/20 to-[#14b8a6]/5 border border-[#14b8a6]/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                <Edit3 className="w-7 h-7 text-[#14b8a6]" />
               </div>
-              <h3 className="text-sm font-medium text-text-primary mb-1">Easy Editing</h3>
-              <p className="text-xs text-text-muted">Edit individual slides with AI</p>
+              <h3 className="text-base font-semibold text-[#f8fafc] mb-2">Easy Editing</h3>
+              <p className="text-sm text-[#94a3b8] leading-relaxed">Edit individual slides with AI</p>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 flex-shrink-0 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+            <div className="text-center group">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[#8b5cf6]/20 to-[#8b5cf6]/5 border border-[#8b5cf6]/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
+                <Download className="w-7 h-7 text-[#8b5cf6]" />
               </div>
-              <h3 className="text-sm font-medium text-text-primary mb-1">Export Options</h3>
-              <p className="text-xs text-text-muted">Download as PDF or PPTX</p>
+              <h3 className="text-base font-semibold text-[#f8fafc] mb-2">Export Options</h3>
+              <p className="text-sm text-[#94a3b8] leading-relaxed">Download as PDF or PPTX</p>
             </div>
           </div>
         </div>

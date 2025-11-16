@@ -33,11 +33,11 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0a0a0f] relative">
       {/* Mobile Backdrop */}
       {!isDesktop && isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 transition-opacity duration-300"
           onClick={() => {
             setIsSidebarOpen(false);
           }}
@@ -47,31 +47,30 @@ const AppLayout = () => {
       {/* Sidebar - Desktop (300px fixed width when open) */}
       <aside
         className={`
-          ${isSidebarOpen && isDesktop ? 'w-[300px] border-r border-border' : 'w-0 border-r-0'}
-          ${!isDesktop && isSidebarOpen ? 'fixed inset-y-0 left-0 z-40 w-[300px] border-r border-border' : ''}
+          ${isSidebarOpen && isDesktop ? 'w-[280px] border-r border-[#1e293b]' : 'w-0 border-r-0'}
+          ${!isDesktop && isSidebarOpen ? 'fixed inset-y-0 left-0 z-40 w-[280px] border-r border-[#1e293b]' : ''}
           ${!isDesktop && !isSidebarOpen ? 'hidden' : ''}
-          transition-all duration-300 ease-in-out flex-shrink-0 overflow-hidden h-full bg-background
+          transition-all duration-300 ease-in-out flex-shrink-0 overflow-hidden h-full bg-[#0a0a0f]
         `}
       >
         {(isSidebarOpen || !isDesktop) && (
-          <div className="w-[300px] h-full relative">
+          <div className="w-[280px] h-full relative">
             {/* Toggle Button - Inside sidebar when open */}
             <button
               onClick={toggleSidebar}
               className="
-                absolute top-4 right-4 z-10
-                p-2.5 rounded-lg
-                bg-background-elevated border-2 border-border
-                hover:bg-muted hover:border-primary/50
+                absolute top-5 right-4 z-10
+                p-2 rounded-lg
+                bg-[#13131a] border border-[#1e293b]
+                hover:bg-[#1e293b] hover:border-[#6366f1]/50
                 transition-all duration-200
-                shadow-lg
-                text-text-primary hover:text-primary
+                text-[#94a3b8] hover:text-[#6366f1]
                 flex items-center justify-center
               "
               aria-label="Hide sidebar"
               title="Hide sidebar"
             >
-              <PanelLeftClose className="w-5 h-5 stroke-[2.5]" />
+              <PanelLeftClose className="w-4 h-4 stroke-[2.5]" />
             </button>
             <Sidebar
               isOpen={isSidebarOpen}
@@ -85,13 +84,13 @@ const AppLayout = () => {
         <button
           onClick={toggleSidebar}
           className="
-            fixed top-4 left-4 z-50
+            fixed top-5 left-4 z-50
             p-2.5 rounded-lg
-            bg-background-elevated border-2 border-border
-            hover:bg-muted hover:border-primary/50
+            bg-[#13131a] border border-[#1e293b]
+            hover:bg-[#1e293b] hover:border-[#6366f1]/50
             transition-all duration-200
-            shadow-lg
-            text-text-primary hover:text-primary
+            shadow-xl
+            text-[#94a3b8] hover:text-[#6366f1]
             flex items-center justify-center
           "
           aria-label="Show sidebar"
@@ -106,9 +105,9 @@ const AppLayout = () => {
         <MainView />
       </main>
 
-      {/* Slide Inspector - Always visible on desktop, fixed width 350px */}
-      <aside className="w-[350px] border-l border-border flex-shrink-0 overflow-hidden h-full bg-background">
-        <div className="w-[350px] h-full">
+      {/* Slide Inspector - Always visible on desktop, fixed width 320px */}
+      <aside className="w-[320px] border-l border-[#1e293b] flex-shrink-0 overflow-hidden h-full bg-[#0a0a0f]">
+        <div className="w-[320px] h-full">
           <SlideInspector />
         </div>
       </aside>

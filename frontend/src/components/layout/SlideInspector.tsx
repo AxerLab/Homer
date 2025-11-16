@@ -1,82 +1,97 @@
+import { Edit3, Layers, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+
 const SlideInspector = () => {
   return (
-    <div className="h-full w-full flex flex-col bg-background">
+    <div className="h-full w-full flex flex-col bg-[#0a0a0f]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-        <h2 className="text-base font-semibold text-text-primary">
-          Slide Editor
-        </h2>
+      <div className="flex items-center justify-between px-5 py-5 border-b border-[#1e293b] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="text-xs text-text-muted px-2 py-1 bg-background-elevated rounded-md">
+          <Edit3 className="w-4 h-4 text-[#6366f1]" />
+          <h2 className="text-base font-bold text-[#f8fafc]">
+            Slide Editor
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-[#94a3b8] px-3 py-1.5 bg-[#13131a] border border-[#1e293b] rounded-lg font-medium">
             Slide 1 of 10
           </div>
         </div>
       </div>
 
       {/* Slide Context - Preview of current slide */}
-      <div className="px-3 py-4 border-b border-border flex-shrink-0">
-        <div className="text-xs text-text-secondary font-medium mb-2">Current Slide</div>
-        <div className="bg-background-elevated rounded-md p-3">
-          <h3 className="text-sm font-medium text-text-primary mb-1.5">
+      <div className="px-4 py-5 border-b border-[#1e293b] flex-shrink-0">
+        <div className="flex items-center gap-2 text-xs text-[#64748b] font-semibold mb-3 uppercase tracking-wider">
+          <Layers className="w-3.5 h-3.5" />
+          Current Slide
+        </div>
+        <div className="bg-[#13131a] border border-[#1e293b] rounded-lg p-4 hover:border-[#6366f1]/30 transition-colors">
+          <h3 className="text-base font-semibold text-[#f8fafc] mb-2">
             Introduction to AI
           </h3>
-          <p className="text-xs text-text-muted leading-relaxed">
+          <p className="text-sm text-[#94a3b8] leading-relaxed">
             Overview of artificial intelligence and its applications in modern technology
           </p>
         </div>
       </div>
 
       {/* Edit Prompt Area */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="mb-4">
-          <label className="text-xs text-text-secondary font-medium mb-2 block">
+      <div className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="mb-5">
+          <label className="text-xs text-[#64748b] font-semibold mb-3 block uppercase tracking-wider flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5" />
             Edit This Slide
           </label>
           <textarea
-            className="w-full h-28 bg-background-elevated border border-border rounded-md p-3 text-sm text-text-primary placeholder-text-muted resize-none outline-none focus:border-primary transition-colors"
+            className="w-full h-32 bg-[#13131a] border border-[#1e293b] rounded-lg p-4 text-sm text-[#f8fafc] placeholder-[#64748b] resize-none outline-none focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 transition-all"
             placeholder="Describe how you want to modify this slide... (e.g., 'Add more details about machine learning')"
           />
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-4">
-          <div className="text-xs text-text-secondary font-medium mb-2">Quick Actions</div>
+        <div className="mb-5">
+          <div className="text-xs text-[#64748b] font-semibold mb-3 uppercase tracking-wider">Quick Actions</div>
           <div className="flex flex-wrap gap-2">
-            <button className="px-2.5 py-1.5 text-xs rounded-md bg-background-elevated border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors">
+            <button className="px-3 py-2 text-xs rounded-lg bg-[#13131a] border border-[#1e293b] text-[#94a3b8] hover:border-[#6366f1] hover:text-[#6366f1] hover:bg-[#1e293b] transition-all duration-200">
               Add detail
             </button>
-            <button className="px-2.5 py-1.5 text-xs rounded-md bg-background-elevated border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors">
+            <button className="px-3 py-2 text-xs rounded-lg bg-[#13131a] border border-[#1e293b] text-[#94a3b8] hover:border-[#6366f1] hover:text-[#6366f1] hover:bg-[#1e293b] transition-all duration-200">
               Simplify
             </button>
-            <button className="px-2.5 py-1.5 text-xs rounded-md bg-background-elevated border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors">
+            <button className="px-3 py-2 text-xs rounded-lg bg-[#13131a] border border-[#1e293b] text-[#94a3b8] hover:border-[#6366f1] hover:text-[#6366f1] hover:bg-[#1e293b] transition-all duration-200">
               Add examples
             </button>
-            <button className="px-2.5 py-1.5 text-xs rounded-md bg-background-elevated border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors">
+            <button className="px-3 py-2 text-xs rounded-lg bg-[#13131a] border border-[#1e293b] text-[#94a3b8] hover:border-[#6366f1] hover:text-[#6366f1] hover:bg-[#1e293b] transition-all duration-200">
               Change tone
             </button>
           </div>
         </div>
 
         {/* Context Slides */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <div className="text-xs text-text-secondary font-medium mb-2">Previous Slide</div>
-            <div className="bg-background-elevated/50 rounded-md p-2.5 border border-border/50">
-              <h4 className="text-xs font-medium text-text-muted mb-0.5">
+            <div className="flex items-center gap-2 text-xs text-[#64748b] font-semibold mb-2 uppercase tracking-wider">
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Previous Slide
+            </div>
+            <div className="bg-[#13131a]/50 rounded-lg p-3 border border-[#1e293b]/50">
+              <h4 className="text-sm font-medium text-[#94a3b8] mb-1">
                 Title Slide
               </h4>
-              <p className="text-xs text-text-muted/70">
+              <p className="text-xs text-[#64748b]">
                 AI Presentation - Generated by AI
               </p>
             </div>
           </div>
           <div>
-            <div className="text-xs text-text-secondary font-medium mb-2">Next Slide</div>
-            <div className="bg-background-elevated/50 rounded-md p-2.5 border border-border/50">
-              <h4 className="text-xs font-medium text-text-muted mb-0.5">
+            <div className="flex items-center gap-2 text-xs text-[#64748b] font-semibold mb-2 uppercase tracking-wider">
+              Next Slide
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+            <div className="bg-[#13131a]/50 rounded-lg p-3 border border-[#1e293b]/50">
+              <h4 className="text-sm font-medium text-[#94a3b8] mb-1">
                 AI Applications
               </h4>
-              <p className="text-xs text-text-muted/70">
+              <p className="text-xs text-[#64748b]">
                 Real-world use cases of AI
               </p>
             </div>
@@ -85,12 +100,13 @@ const SlideInspector = () => {
       </div>
 
       {/* Actions Footer */}
-      <div className="px-3 py-3 border-t border-border flex-shrink-0">
-        <div className="flex gap-2">
-          <button className="flex-1 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-sm rounded-md font-medium transition-colors">
+      <div className="px-4 py-4 border-t border-[#1e293b] flex-shrink-0">
+        <div className="flex gap-3">
+          <button className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#5558e3] hover:to-[#7c4de7] text-white text-sm rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-[#6366f1]/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4" />
             Apply Changes
           </button>
-          <button className="px-3 py-2 bg-background-elevated hover:bg-muted border border-border text-text-secondary text-sm rounded-md transition-colors">
+          <button className="px-4 py-2.5 bg-[#13131a] hover:bg-[#1e293b] border border-[#1e293b] text-[#94a3b8] text-sm rounded-lg transition-all duration-200 hover:text-[#f8fafc]">
             Cancel
           </button>
         </div>
