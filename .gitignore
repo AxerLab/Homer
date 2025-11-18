@@ -215,3 +215,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# javascript
+node_modules/
+
+.playwright-mcp/
+.claude/
