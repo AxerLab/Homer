@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-background text-text;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  #root { height: 100%; }
+}
+
+@layer components {
+  .glass-effect { @apply backdrop-blur-lg bg-elevated/50 border border-border; }
+  .glow-effect { box-shadow: 0 0 20px 10px rgba(99, 102, 241, 0.2); }
+  .slide-preview { @apply bg-gradient-to-b from-gray-700 to-gray-800 rounded-lg; }
+}

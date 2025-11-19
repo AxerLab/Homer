@@ -5,8 +5,6 @@
 export type Presentation = {
   id: string;
   main_topic: string;
-  createdAt?: Date;
-  updatedAt?: Date;
   // Optional: URLs for direct file access (for production with CDN/storage)
   file_urls?: {
     pdf?: string;
