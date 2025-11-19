@@ -27,6 +27,21 @@ PDF_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="AI Slides API", version="1.0.0")
 
+# Add CORS for frontend development
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Serve generated files for local development
+from fastapi.staticfiles import StaticFiles
+if OUTPUT_DIR.exists():
+    app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
+
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 def create_presentation(
     presentation: schemas.PresentationCreate,
