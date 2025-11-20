@@ -5,6 +5,7 @@
 export type Presentation = {
   id: string;
   main_topic: string;
+  file_type?: 'pptx' | 'pdf';  // File type from backend
   createdAt?: Date;
   updatedAt?: Date;
   // Optional: URLs for direct file access (for production with CDN/storage)

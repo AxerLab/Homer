@@ -1,19 +1,11 @@
 import React from 'react'
-import { cn } from '@/lib/utils'
-import { SlideNavigator } from '../presentation/SlideNavigator'
 
 interface HeaderProps {
-  currentSlide: number
-  totalSlides: number
-  onNavigate: (slideNumber: number) => void
   presentationTitle?: string
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentSlide,
-  totalSlides,
-  onNavigate,
-  presentationTitle = 'Slide Title'
+  presentationTitle = ''
 }) => {
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
@@ -22,16 +14,8 @@ export const Header: React.FC<HeaderProps> = ({
           type="text"
           value={presentationTitle}
           className="bg-transparent text-text text-lg font-medium focus:outline-none"
-          placeholder="Presentation Title"
+          placeholder="Select or generate a presentation"
           readOnly
-        />
-      </div>
-
-      <div className="flex items-center gap-6">
-        <SlideNavigator
-          currentSlide={currentSlide}
-          totalSlides={totalSlides}
-          onNavigate={onNavigate}
         />
       </div>
     </header>

@@ -47,7 +47,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   }
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 transition-all duration-300 z-10">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 transition-all duration-300 z-50">
       <AnimatePresence>
         {!isExpanded ? (
           <motion.button

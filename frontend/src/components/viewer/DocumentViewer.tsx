@@ -1,24 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-// Import PPTXViewer from the default namespace
-import PptxViewJS from 'pptxviewjs';
 import type { Presentation } from '@/types/api';
 import { getFileUrl } from '@/utils/fileUrls';
+import { cn } from '@/lib/utils';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Extract the PPTXViewer class from namespace
-const { PPTXViewer } = PptxViewJS;
-
 // Set up the PDF.js worker
-try {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url,
-  ).toString();
-} catch (error) {
-  console.error('Error setting up PDF.js worker:', error);
-}
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 interface DocumentViewerProps {
   presentation: Presentation;

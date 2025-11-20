@@ -6,13 +6,18 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# PostgreSQL connection string from environment or default
+# Database connection string - using SQLite for now
+# To use PostgreSQL, set DATABASE_URL environment variable
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/aislides"
+    "sqlite:///./aislides.db"  # Using SQLite by default
 )
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Create engine with appropriate settings for SQLite or PostgreSQL
+if "sqlite" in SQLALCHEMY_DATABASE_URL:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

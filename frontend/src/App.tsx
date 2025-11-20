@@ -5,28 +5,10 @@ import { SlideCanvas } from './components/presentation/SlideCanvas'
 import { SlideContentPanel } from './components/presentation/SlideContentPanel'
 import { GenerateButton } from './components/presentation/GenerateButton'
 import { cn } from './lib/utils'
-import type { PastChat, Slide, Presentation } from './types'
+import type { PastChat, Presentation } from './types'
 import { presentationApi } from './services/api'
 
-// Mock data for initial display
-const mockPastChats: PastChat[] = [
-  { id: '1', title: 'Pitch meeting 24th', timestamp: new Date() },
-  { id: '2', title: 'Client Demo', timestamp: new Date() },
-  { id: '3', title: 'Hackathon Deck', timestamp: new Date() },
-  { id: '4', title: 'AI brainstorming', timestamp: new Date() },
-  { id: '5', title: 'Financial Meeting', timestamp: new Date() },
-  { id: '6', title: 'Board meeting deck', timestamp: new Date() },
-  { id: '7', title: 'School project', timestamp: new Date() },
-  { id: '8', title: 'History presentation', timestamp: new Date() },
-]
-
-const mockSlide: Slide = {
-  id: '1',
-  title: 'Introduction to AI',
-  content: `This slide provides an overview of artificial intelligence and its applications in modern technology.
-
-Fusce nec rutrum velit. In vitae ex cursus, condimentum mi at, aliquet lorem. Integer ornare tellus augue, at lacinia elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ornare tellus augue, in mauris non faucibus volutpat et velit ligula. Donec feugiat quam vel, aute mauris lacinia aliquam ornare. Sed finibus mauris non felis ultricies tincidunt. Fusce sem tellus, fringilla eget sapien sed, ornare maximus ligula.`
-}
+// Removed mock data - will only show real presentations from backend
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -35,10 +17,9 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [presentations, setPresentations] = useState<Presentation[]>([])
   const [currentPresentation, setCurrentPresentation] = useState<Presentation | null>(null)
-  const [pastChats, setPastChats] = useState<PastChat[]>(mockPastChats)
-  const totalSlides = 10
+  const [pastChats, setPastChats] = useState<PastChat[]>([])
 
-  // Load presentations on mount
+  // Load presentations on mount and select the first one
   useEffect(() => {
     loadPresentations()
   }, [])
@@ -56,9 +37,14 @@ function App() {
         presentationId: p.id
       }))
 
-      // Combine with mock chats for display
-      if (chats.length > 0) {
-        setPastChats([...chats, ...mockPastChats.slice(chats.length)])
+      // Only show real presentations, no mock data
+      setPastChats(chats)
+
+      // Auto-select the first presentation if available
+      if (presos.length > 0) {
+        const firstPresentation = presos[0]
+        setSelectedChatId(firstPresentation.id)
+        setCurrentPresentation(firstPresentation)
       }
     } catch (error) {
       console.error('Failed to load presentations:', error)
@@ -148,34 +134,34 @@ function App() {
         )}
       >
         <Header
-          currentSlide={currentSlide}
-          totalSlides={totalSlides}
-          onNavigate={setCurrentSlide}
-          presentationTitle={currentPresentation?.main_topic || 'Slide Title'}
+          presentationTitle={currentPresentation?.main_topic || ''}
         />
 
         <div className="flex-1 flex overflow-hidden h-0">
-          <div className="flex-1 p-8 flex items-center justify-center">
+          <div className="flex-1 px-8 py-4 flex items-center justify-center">
             <SlideCanvas
-              slide={mockSlide}
+              presentation={currentPresentation || undefined}
+              currentSlide={currentSlide}
+              onSlideChange={setCurrentSlide}
               className="max-w-4xl w-full"
             />
           </div>
 
-          <SlideContentPanel
-            slide={mockSlide}
-            currentSlideNumber={currentSlide}
-            totalSlides={totalSlides}
-            className="w-96"
-            onModifySlide={handleModifySlide}
-          />
+          {currentPresentation && (
+            <SlideContentPanel
+              slide={undefined}
+              currentSlideNumber={currentSlide}
+              totalSlides={10}
+              className="w-96"
+              onModifySlide={handleModifySlide}
+            />
+          )}
         </div>
       </div>
 
       <GenerateButton
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
-        isSidebarOpen={isSidebarOpen}
       />
     </div>
   )
