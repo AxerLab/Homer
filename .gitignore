@@ -220,3 +220,4 @@ frontend_backup/
 .playwright-mcp/
 
 CLAUDE.md
+!Dockerfile.tex

@@ -103,20 +103,17 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
     tex_output_path = output_dir / pdf_basename
     doc.generate_tex(str(tex_output_path))
 
-    # Reconstruct the full path to the .tex file for docker command
+    # Reconstruct the full path to the .tex file for docker compose exec command
     tex_file = Path(f"{tex_output_path}.tex")
-    tex_dir = tex_file.parent.resolve()
     tex_filename = tex_file.name
     
-    docker_image = "blang/latex:ubuntu"
-    
+    # Use docker compose exec to run pdflatex in the tex-pdf service
     command = [
-        "docker", "run", "--rm",
-        "-v", f"{tex_dir}:/workdir",
-        docker_image,
+        "docker", "compose", "exec", "-T",
+        "tex-pdf",
         "pdflatex",
-        "-output-directory=/workdir",
-        f"/workdir/{tex_filename}"
+        "-interaction=nonstopmode",
+        tex_filename
     ]
     
     try:
@@ -125,9 +122,6 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         print("Error during LaTeX compilation:")
         print(e.stdout)
         print(e.stderr)
-        raise
-    except FileNotFoundError:
-        print("Error: Docker is not installed or not in the system's PATH.")
         raise
 
     return Path(output_dir / f"{pdf_basename}.pdf").resolve()
