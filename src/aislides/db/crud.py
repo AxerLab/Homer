@@ -3,10 +3,11 @@ from . import models
 from typing import Dict, Any, Optional
 import json
 
-def create_presentation(db: Session, main_topic: str, json_object: str) -> models.Presentation:
+def create_presentation(db: Session, main_topic: str, json_object: str, file_type: str = "pdf") -> models.Presentation:
     """Create a new presentation with generated JSON"""
     db_presentation = models.Presentation(
         main_topic=main_topic,
+        file_type=file_type,  # Store the file type
         json_object=json_object  # Store as JSON string
     )
     db.add(db_presentation)

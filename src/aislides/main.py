@@ -27,6 +27,21 @@ PDF_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="AI Slides API", version="1.0.0")
 
+# Add CORS for frontend development
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Serve generated files for local development
+from fastapi.staticfiles import StaticFiles
+if OUTPUT_DIR.exists():
+    app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
+
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 def create_presentation(
     presentation: schemas.PresentationCreate,
@@ -53,7 +68,8 @@ def create_presentation(
         db_presentation = crud.create_presentation(
             db=db,
             main_topic=presentation.main_topic,
-            json_object=json_string
+            json_object=json_string,
+            file_type=presentation.file_type
         )
 
         # Generate file with UUID as name
@@ -87,7 +103,8 @@ def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
 
     return schemas.PresentationGetResponse(
         id=db_presentation.id,
-        main_topic=db_presentation.main_topic
+        main_topic=db_presentation.main_topic,
+        file_type=getattr(db_presentation, 'file_type', 'pdf')  # Use getattr for backward compatibility
     )
 
 @app.delete("/api/v1/presentations/{presentation_id}")
@@ -184,7 +201,8 @@ def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(ge
         "presentations": [
             {
                 "id": p.id,
-                "main_topic": p.main_topic
+                "main_topic": p.main_topic,
+                "file_type": getattr(p, 'file_type', 'pdf')  # Use getattr for backward compatibility
             }
             for p in presentations
         ],

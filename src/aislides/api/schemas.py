@@ -15,6 +15,7 @@ class PresentationGetResponse(BaseModel):
     """GET response - presentation data from database"""
     id: str = Field(..., description="UUID of the presentation")
     main_topic: str = Field(..., description="Main topic of the presentation")
+    file_type: str = Field(default="pdf", description="Type of file (pptx or pdf)")
 
 class SlideUpdate(BaseModel):
     """PUT request - update specific slide"""
