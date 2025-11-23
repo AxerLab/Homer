@@ -13,8 +13,6 @@ from src.aislides.core.iterator.iterator import regenerate_slide
 from src.aislides.core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
 from src.aislides.core.engines.pptx.json_handler import structure_to_ppt
 from src.aislides.core.engines.tex.generator import generate_tex_and_pdf
-from .pptx_converter import get_pptx_preview
-from .pptx_to_images import get_pptx_slide_images
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -211,54 +209,6 @@ def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(ge
         "skip": skip,
         "limit": limit,
         "total": len(presentations)
-    }
-
-@app.get("/api/v1/presentations/{presentation_id}/pptx-preview")
-def get_pptx_preview_data(presentation_id: str, db: Session = Depends(get_db)):
-    """
-    Get PPTX preview data (text content from slides) - DEPRECATED
-    """
-    presentation = crud.get_presentation(db, presentation_id)
-    if not presentation:
-        raise HTTPException(status_code=404, detail="Presentation not found")
-
-    # Check if PPTX file exists
-    pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
-    if not pptx_file.exists():
-        raise HTTPException(status_code=404, detail="PPTX file not found")
-
-    preview_data = get_pptx_preview(str(pptx_file))
-
-    return {
-        "presentation_id": presentation_id,
-        "title": presentation.main_topic,
-        **preview_data
-    }
-
-@app.get("/api/v1/presentations/{presentation_id}/pptx-slides")
-def get_pptx_slides_as_images(presentation_id: str, db: Session = Depends(get_db)):
-    """
-    Get PPTX slides as actual images (base64 encoded)
-    """
-    presentation = crud.get_presentation(db, presentation_id)
-    if not presentation:
-        raise HTTPException(status_code=404, detail="Presentation not found")
-
-    # Check if PPTX file exists
-    pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
-    if not pptx_file.exists():
-        raise HTTPException(status_code=404, detail="PPTX file not found")
-
-    # Convert slides to images
-    image_data = get_pptx_slide_images(str(pptx_file))
-
-    if not image_data.get("success"):
-        raise HTTPException(status_code=500, detail=image_data.get("error", "Failed to convert slides"))
-
-    return {
-        "presentation_id": presentation_id,
-        "title": presentation.main_topic,
-        **image_data
     }
 
 # Health check endpoint

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 
 [[package]]
@@ -160,18 +160,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/16/0f/861e168fc813c56a78b35f3c30d91c6757d1fd185af1110f1aec784b35d0/argcomplete-3.6.2.tar.gz", hash = "sha256:d0519b1bc867f5f4f4713c41ad0aba73a4a5f007449716b16f385f2166dc6adf", size = 73403, upload-time = "2025-04-03T04:57:03.52Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/31/da/e42d7a9d8dd33fa775f467e4028a47936da2f01e4b0e561f9ba0d74cb0ca/argcomplete-3.6.2-py3-none-any.whl", hash = "sha256:65b3133a29ad53fb42c48cf5114752c7ab66c1c38544fdf6460f450c09b42591", size = 43708, upload-time = "2025-04-03T04:57:01.591Z" },
-]
-
-[[package]]
-name = "aspose-slides"
-version = "25.11.0"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/74/6d16cb3f8363a1df377845b5fef50cbe01ec56254ee8272e127af68854ab/aspose_slides-25.11.0-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:c69f277553c9fca706d36ab39a11e929f178d96402833da133b7b9c334a681dc", size = 89038605, upload-time = "2025-11-17T01:16:32.762Z" },
-    { url = "https://files.pythonhosted.org/packages/24/00/1160cdc03e7349530822ba08d22004341204c894f3abc89b847e4bae7055/aspose_slides-25.11.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:377370dab97c3751dcd1793ae5ac60384148924c84dc5e225d808135f6b1c9d2", size = 69730726, upload-time = "2025-11-17T01:16:41.003Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/26/e19824eb490561a91d28e997e3275e0ec823e4e3c5203cc10a83191281a3/aspose_slides-25.11.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:a203c94055862bafe3b609c1cef556327c6d81eac26217fe7a9f5059eafe5f8e", size = 104657440, upload-time = "2025-11-17T01:16:48.307Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/a3/a1db808fa705a758f3eb8ad1347977548b4b5e31432be3432676fddab972/aspose_slides-25.11.0-py3-none-win32.whl", hash = "sha256:c213f75e70fc23a35b0077affc591226224e6636714a8a77053ef6135b7246da", size = 64435714, upload-time = "2025-11-17T01:16:54.419Z" },
-    { url = "https://files.pythonhosted.org/packages/4e/9b/b7de3f2fd0a58107ddf8e0421b319f22681ab293410618ea2b424221902b/aspose_slides-25.11.0-py3-none-win_amd64.whl", hash = "sha256:525e3c3a3152c4a004e99bd341a01c55c671202ce6140a292927835ab986e3e2", size = 73670404, upload-time = "2025-11-17T01:17:38.588Z" },
 ]
 
 [[package]]
@@ -1599,18 +1587,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdf2image"
-version = "1.17.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/00/d8/b280f01045555dc257b8153c00dee3bc75830f91a744cd5f84ef3a0a64b1/pdf2image-1.17.0.tar.gz", hash = "sha256:eaa959bc116b420dd7ec415fcae49b98100dda3dd18cd2fdfa86d09f112f6d57", size = 12811, upload-time = "2024-01-07T20:33:01.965Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/33/61766ae033518957f877ab246f87ca30a85b778ebaad65b7f74fa7e52988/pdf2image-1.17.0-py3-none-any.whl", hash = "sha256:ecdd58d7afb810dffe21ef2b1bbc057ef434dabbac6c33778a38a3f7744a27e2", size = 11618, upload-time = "2024-01-07T20:32:59.957Z" },
-]
-
-[[package]]
 name = "pillow"
 version = "11.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1690,11 +1666,9 @@ name = "ppt-ai"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "aspose-slides" },
     { name = "colorlog" },
     { name = "ecs-logging" },
     { name = "fastapi" },
-    { name = "pdf2image" },
     { name = "pillow" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
@@ -1711,11 +1685,9 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aspose-slides", specifier = ">=25.11.0" },
     { name = "colorlog", specifier = ">=6.9.0" },
     { name = "ecs-logging", specifier = ">=2.2.0" },
     { name = "fastapi", specifier = ">=0.121.2" },
-    { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pillow", specifier = ">=11.3.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pydantic", specifier = ">=2.11.7" },

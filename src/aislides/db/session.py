@@ -8,10 +8,7 @@ load_dotenv()
 
 # Database connection string - using SQLite for now
 # To use PostgreSQL, set DATABASE_URL environment variable
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./aislides.db"  # Using SQLite by default
-)
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./aislides.db")
 
 # Create engine with appropriate settings for SQLite or PostgreSQL
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
