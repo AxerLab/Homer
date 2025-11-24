@@ -8,11 +8,11 @@ from pathlib import Path
 from .db import crud, models
 from .api import schemas
 from .db.session import get_db, engine
-from src.aislides.core.generator.generator import generate_presentation
-from src.aislides.core.iterator.iterator import regenerate_slide
-from src.aislides.core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
-from src.aislides.core.engines.pptx.json_handler import structure_to_ppt
-from src.aislides.core.engines.tex.generator import generate_tex_and_pdf
+from .core.generator.generator import generate_presentation
+from .core.iterator.iterator import regenerate_slide
+from .core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
+from .core.engines.pptx.json_handler import structure_to_ppt
+from .core.engines.tex.generator import generate_tex_and_pdf
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)

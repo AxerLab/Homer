@@ -1,8 +1,8 @@
 from pptx import Presentation
 from pptx.shapes.base import BaseShape
 from pptx.text.text import TextFrame
-from src.aislides.core.models.content.textcontent.textcontent import TextContent
-from src.aislides.core.models.content.textcontent.comparison import Comparison
+from ...models.content.textcontent.textcontent import TextContent
+from ...models.content.textcontent.comparison import Comparison
 
 
 class PPTXGenerator:

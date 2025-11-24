@@ -1,13 +1,13 @@
 from typing import List
-from src.aislides.core.llm import model
-from src.aislides.core.models.presentation.presentation import SlidePresentation
+from ..llm import model
+from ..models.presentation.presentation import SlidePresentation
 from pydantic_ai import Agent, NativeOutput
 from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 from .prompts import (
     generator_system_prompt,
     iterator_system_prompt,
 )
-from src.aislides.core.models.slide.slide import Slide
+from ..models.slide.slide import Slide
 
 agent = Agent(
     model=model,

@@ -2,8 +2,8 @@ import json
 from typing import List
 
 from pydantic import BaseModel, Field, field_validator
-from src.aislides.core.models.slide.slide import Slide
-from src.aislides.core.models.layouts.slide_layout import SlideLayout
+from ..slide.slide import Slide
+from ..layouts.slide_layout import SlideLayout
 
 class SlidePresentation(BaseModel):
     """Complete presentation model with enhanced validation and flow checking."""

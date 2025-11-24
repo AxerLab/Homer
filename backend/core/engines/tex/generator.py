@@ -1,9 +1,9 @@
 from pathlib import Path
 from pylatex import Document, NoEscape
-from src.aislides.core.generator.generator import generate_presentation
-from src.aislides.core.models.presentation.presentation import SlidePresentation
-from src.aislides.core.models.layouts.slide_layout import SlideLayout
-from src.aislides.core.models.content.textcontent.textcontent import TextContent
+from ...generator.generator import generate_presentation
+from ...models.presentation.presentation import SlidePresentation
+from ...models.layouts.slide_layout import SlideLayout
+from ...models.content.textcontent.textcontent import TextContent
 from typing import Union
 import subprocess
 

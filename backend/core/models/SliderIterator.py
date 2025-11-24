@@ -1,5 +1,5 @@
 """Model for handling the structured input for iterative slide enhancement."""
-from src.aislides.core.models.slide.slide import Slide
+from .slide.slide import Slide
 from typing import List, Optional
 from pydantic import BaseModel, Field
 

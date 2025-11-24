@@ -1,8 +1,8 @@
-from src.aislides.core.models.SliderIterator import SlideIterator
-from src.aislides.core.models.presentation.presentation import SlidePresentation
-from src.aislides.core.agent.agent import interator_agent
-from src.aislides.config.logs import logger
-from src.aislides.core.memory.iteration_memory import iteration_memory
+from ..models.SliderIterator import SlideIterator
+from ..models.presentation.presentation import SlidePresentation
+from ..agent.agent import interator_agent
+from ...config.logs import logger
+from ..memory.iteration_memory import iteration_memory
 
 from pydantic_ai import ModelHTTPError
 

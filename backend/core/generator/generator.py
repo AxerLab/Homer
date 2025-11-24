@@ -1,7 +1,7 @@
-from src.aislides.core.agent.agent import agent
-from src.aislides.config.logs import logger
-from src.aislides.core.memory.global_memory import global_memory
-from src.aislides.core.models.presentation.presentation import SlidePresentation
+from ..agent.agent import agent
+from ...config.logs import logger
+from ..memory.global_memory import global_memory
+from ..models.presentation.presentation import SlidePresentation
 from typing import Optional
 from pydantic_ai import ModelHTTPError
 

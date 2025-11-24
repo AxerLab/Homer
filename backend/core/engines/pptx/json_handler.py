@@ -1,5 +1,5 @@
 from typing import Optional
-from src.aislides.core.models.presentation.presentation import SlidePresentation
+from ...models.presentation.presentation import SlidePresentation
 from .generator import PPTXGenerator
 
 def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None):

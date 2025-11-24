@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, Field, model_validator
-from src.aislides.core.models.content.slide_content import SlideContent
-from src.aislides.core.models.layouts.slide_layout import SlideLayout
+from ..content.slide_content import SlideContent
+from ..layouts.slide_layout import SlideLayout
 
 class Slide(BaseModel):
     """Individual slide model with enhanced validation and type safety."""
