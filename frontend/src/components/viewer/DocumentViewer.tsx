@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { Presentation } from '@/types/api';
 import { getFileUrl } from '@/utils/fileUrls';
-import { cn } from '@/lib/utils';
+import { PPTXViewer } from 'pptxviewjs';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 

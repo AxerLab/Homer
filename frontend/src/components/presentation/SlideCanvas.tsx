@@ -1,7 +1,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { SimplifiedDocumentViewer } from '../viewer/SimplifiedDocumentViewer'
-import type { Presentation } from '@/types'
+import type { Presentation } from '@/types/api'
 
 interface SlideCanvasProps {
   presentation?: Presentation

@@ -14,7 +14,6 @@ interface SlideContentPanelProps {
 export const SlideContentPanel: React.FC<SlideContentPanelProps> = ({
   slide,
   currentSlideNumber,
-  totalSlides,
   className,
   onModifySlide
 }) => {

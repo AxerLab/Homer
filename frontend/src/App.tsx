@@ -15,7 +15,7 @@ function App() {
   const [selectedChatId, setSelectedChatId] = useState<string>()
   const [currentSlide, setCurrentSlide] = useState(1)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [presentations, setPresentations] = useState<Presentation[]>([])
+  const [, setPresentations] = useState<Presentation[]>([])
   const [currentPresentation, setCurrentPresentation] = useState<Presentation | null>(null)
   const [pastChats, setPastChats] = useState<PastChat[]>([])
 
@@ -62,7 +62,7 @@ function App() {
       const presentation = await presentationApi.createPresentation(prompt, fileType)
 
       // Add to presentations list
-      setPresentations(prev => [presentation, ...prev])
+      setPresentations(prev => [presentation, ...(prev || [])])
 
       // Update past chats
       const newChat: PastChat = {
@@ -113,7 +113,7 @@ function App() {
       await presentationApi.deletePresentation(chatId)
       
       // Remove from state
-      setPresentations(prev => prev.filter(p => p.id !== chatId))
+      setPresentations(prev => (prev || []).filter(p => p.id !== chatId))
       setPastChats(prev => prev.filter(c => c.id !== chatId))
       
       // If we deleted the current presentation, clear selection

@@ -12,7 +12,6 @@ interface GenerateButtonProps {
 export const GenerateButton: React.FC<GenerateButtonProps> = ({
   onGenerate,
   isGenerating = false,
-  isSidebarOpen
 }) => {
   const [prompt, setPrompt] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
