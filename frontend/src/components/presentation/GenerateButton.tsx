@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface GenerateButtonProps {
-  onGenerate: (prompt: string, format: 'PPTX' | 'PDF' | 'TeX') => void
+  onGenerate: (prompt: string, format: 'PPTX' | 'TeX') => void
   isGenerating?: boolean
   isSidebarOpen?: boolean
 }
@@ -16,7 +16,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
-  const [selectedFormat, setSelectedFormat] = useState<'PPTX' | 'PDF' | 'TeX'>('PPTX')
+  const [selectedFormat, setSelectedFormat] = useState<'PPTX' | 'TeX'>('PPTX')
   const dialogRef = useRef<HTMLDivElement>(null)
 
   // Click outside handler
@@ -84,7 +84,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
 
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2 bg-background/50 rounded-full p-1">
-                  {(['PPTX', 'PDF', 'TeX'] as const).map(format => (
+                  {(['PPTX', 'TeX'] as const).map(format => (
                     <button
                       key={format}
                       onClick={() => setSelectedFormat(format)}

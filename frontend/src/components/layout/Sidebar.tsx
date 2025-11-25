@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight } from '@mui/icons-material'
+import { ChevronLeft, ChevronRight, Delete } from '@mui/icons-material'
 import { cn } from '@/lib/utils'
 import type { PastChat } from '@/types'
 
@@ -9,6 +9,7 @@ interface SidebarProps {
   pastChats: PastChat[]
   selectedChatId?: string
   onChatSelect: (chatId: string) => void
+  onChatDelete?: (chatId: string) => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -16,7 +17,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggle,
   pastChats,
   selectedChatId,
-  onChatSelect
+  onChatSelect,
+  onChatDelete
 }) => {
   return (
     <>
@@ -30,17 +32,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2">
                 {pastChats.map((chat) => (
-                  <button
+                  <div
                     key={chat.id}
-                    onClick={() => onChatSelect(chat.id)}
                     className={cn(
-                      'w-full text-left px-4 py-3 rounded-lg transition-colors',
-                      'hover:bg-primary/10 text-text-muted hover:text-text',
-                      selectedChatId === chat.id && 'bg-primary/20 text-text'
+                      'group flex items-center gap-2 w-full px-4 py-3 rounded-lg transition-colors',
+                      'hover:bg-primary/10',
+                      selectedChatId === chat.id && 'bg-primary/20'
                     )}
                   >
-                    <div className="font-medium truncate">{chat.title}</div>
-                  </button>
+                    <button
+                      onClick={() => onChatSelect(chat.id)}
+                      className={cn(
+                        'flex-1 text-left truncate',
+                        'text-text-muted hover:text-text',
+                        selectedChatId === chat.id && 'text-text'
+                      )}
+                    >
+                      <div className="font-medium truncate">{chat.title}</div>
+                    </button>
+                    {onChatDelete && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onChatDelete(chat.id)
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-text-muted hover:text-red-500 transition-all"
+                        title="Delete presentation"
+                      >
+                        <Delete className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

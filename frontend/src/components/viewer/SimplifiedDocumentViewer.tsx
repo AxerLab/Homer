@@ -35,6 +35,8 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   const pdfUrl = getFileUrl(presentation, 'pdf');
   // Get PPTX URL for download button (only if original type was pptx)
   const pptxUrl = fileType === 'pptx' ? getFileUrl(presentation, 'pptx') : null;
+  // Get TeX URL for download button (only for LaTeX/PDF presentations, not PPTX)
+  const texUrl = fileType !== 'pptx' ? getFileUrl(presentation, 'tex') : null;
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -123,6 +125,16 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
             <Download className="w-4 h-4" />
             PDF
           </a>
+          {texUrl && (
+            <a
+              href={texUrl}
+              download={`${presentation.main_topic}.tex`}
+              className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-teal-600 transition-all flex items-center gap-1 font-medium shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              TeX
+            </a>
+          )}
         </div>
       </div>
 

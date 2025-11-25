@@ -22,7 +22,7 @@ const USE_LOCAL_FILES = import.meta.env.VITE_USE_LOCAL_FILES !== 'false';
  */
 export function getFileUrl(
   presentation: Presentation,
-  fileType: 'pdf' | 'pptx'
+  fileType: 'pdf' | 'pptx' | 'tex'
 ): string | null {
   // First, check if backend provided direct URLs (production scenario)
   if (presentation.file_urls?.[fileType]) {
@@ -34,7 +34,8 @@ export function getFileUrl(
     // For local development, files are at:
     // - /generated_files/pdf/{uuid}.pdf
     // - /generated_files/pptx/{uuid}.pptx
-    const subdir = fileType === 'pdf' ? 'pdf' : 'pptx';
+    // - /generated_files/pdf/{uuid}.tex (tex files are stored in pdf folder)
+    const subdir = fileType === 'tex' ? 'pdf' : fileType;
     return `${API_BASE_URL}/generated_files/${subdir}/${presentation.id}.${fileType}`;
   }
 
@@ -47,7 +48,7 @@ export function getFileUrl(
  */
 export function isFileAvailable(
   presentation: Presentation,
-  fileType: 'pdf' | 'pptx'
+  fileType: 'pdf' | 'pptx' | 'tex'
 ): boolean {
   return getFileUrl(presentation, fileType) !== null;
 }
@@ -55,8 +56,8 @@ export function isFileAvailable(
 /**
  * Get available file types for a presentation
  */
-export function getAvailableFileTypes(presentation: Presentation): ('pdf' | 'pptx')[] {
-  const types: ('pdf' | 'pptx')[] = [];
+export function getAvailableFileTypes(presentation: Presentation): ('pdf' | 'pptx' | 'tex')[] {
+  const types: ('pdf' | 'pptx' | 'tex')[] = [];
 
   if (isFileAvailable(presentation, 'pdf')) {
     types.push('pdf');
@@ -66,9 +67,13 @@ export function getAvailableFileTypes(presentation: Presentation): ('pdf' | 'ppt
     types.push('pptx');
   }
 
+  if (isFileAvailable(presentation, 'tex')) {
+    types.push('tex');
+  }
+
   // If no URLs provided but we have an ID, assume both types are available locally
   if (types.length === 0 && USE_LOCAL_FILES && presentation.id) {
-    return ['pdf', 'pptx'];
+    return ['pdf', 'pptx', 'tex'];
   }
 
   return types;

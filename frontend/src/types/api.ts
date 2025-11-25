@@ -12,6 +12,7 @@ export type Presentation = {
   file_urls?: {
     pdf?: string;
     pptx?: string;
+    tex?: string;
   };
 }
 
@@ -27,6 +28,7 @@ export type CreatePresentationResponse = {
   file_urls?: {
     pdf?: string;
     pptx?: string;
+    tex?: string;
   };
 }
 
@@ -41,5 +43,6 @@ export type SlideUpdateResponse = {
   file_urls?: {
     pdf?: string;
     pptx?: string;
+    tex?: string;
   };
 }

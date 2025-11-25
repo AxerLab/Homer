@@ -51,7 +51,7 @@ function App() {
     }
   }
 
-  const handleGenerate = async (prompt: string, format: 'PPTX' | 'PDF' | 'TeX') => {
+  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX') => {
     console.log('Generating presentation:', { prompt, format })
     setIsGenerating(true)
 
@@ -104,6 +104,29 @@ function App() {
     }
   }
 
+  const handleDeleteChat = async (chatId: string) => {
+    if (!confirm('Are you sure you want to delete this presentation?')) {
+      return
+    }
+
+    try {
+      await presentationApi.deletePresentation(chatId)
+      
+      // Remove from state
+      setPresentations(prev => prev.filter(p => p.id !== chatId))
+      setPastChats(prev => prev.filter(c => c.id !== chatId))
+      
+      // If we deleted the current presentation, clear selection
+      if (selectedChatId === chatId) {
+        setSelectedChatId(undefined)
+        setCurrentPresentation(null)
+      }
+    } catch (error) {
+      console.error('Failed to delete presentation:', error)
+      alert('Failed to delete presentation. Please try again.')
+    }
+  }
+
   const handleModifySlide = async (slideNumber: number, prompt: string) => {
     if (!currentPresentation) return
 
@@ -125,6 +148,7 @@ function App() {
         pastChats={pastChats}
         selectedChatId={selectedChatId}
         onChatSelect={handleChatSelect}
+        onChatDelete={handleDeleteChat}
       />
 
       <div
