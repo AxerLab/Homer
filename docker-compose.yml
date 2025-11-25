@@ -21,5 +21,12 @@ services:
     command: tail -f /dev/null  # Keep container running
     restart: unless-stopped
 
+  pptx2pdf:
+    image: wteja/pdf-converter
+    platform: linux/amd64
+    ports:
+      - '5001:5000'
+    restart: unless-stopped
+
 volumes:
   postgres_data:

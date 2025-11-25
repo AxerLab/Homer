@@ -13,6 +13,7 @@ from backend.core.iterator.iterator import regenerate_slide
 from backend.core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
 from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
+from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -31,7 +32,7 @@ app = FastAPI(title="AI Slides API", version="1.0.0")
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,10 +77,15 @@ def create_presentation(
         if presentation.file_type == "pptx":
             file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
             structure_to_ppt(generated_presentation, save_path=str(file_path))
+            
+            # Also convert PPTX to PDF for preview
+            pdf_path = PDF_DIR / f"{db_presentation.id}.pdf"
+            convert_pptx_to_pdf(str(file_path), str(pdf_path))
+            
         elif presentation.file_type == "pdf":
             # Generate PDF with UUID name in the PDF directory
             pdf_output_path = str(PDF_DIR / db_presentation.id)
-            pdf_path = generate_tex_and_pdf(
+            generate_tex_and_pdf(
                 presentation.main_topic,
                 presentation.main_topic,
                 tex_path=f"{pdf_output_path}.tex",

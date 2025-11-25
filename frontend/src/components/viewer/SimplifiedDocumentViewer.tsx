@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, Download, ExitToApp } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Download } from '@mui/icons-material';
 import type { Presentation } from '@/types/api';
 import { getFileUrl } from '@/utils/fileUrls';
 import { cn } from '@/lib/utils';
@@ -19,24 +19,6 @@ interface SimplifiedDocumentViewerProps {
   className?: string;
 }
 
-interface PPTXSlide {
-  slide_number: number;
-  title: string;
-  content?: string[];
-  image_base64?: string;
-  width?: number;
-  height?: number;
-  notes?: string;
-}
-
-interface PPTXPreviewData {
-  success: boolean;
-  total_slides: number;
-  slides: PPTXSlide[];
-  presentation_width?: number;
-  presentation_height?: number;
-}
-
 export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> = ({
   presentation,
   fileType = 'pdf',
@@ -48,18 +30,11 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   const [pageNumber, setPageNumber] = useState(currentPage);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pptxPreview, setPptxPreview] = useState<PPTXPreviewData | null>(null);
-  const [currentPptxSlide, setCurrentPptxSlide] = useState(0);
 
-  // Get file URL using utility
-  const fileUrl = getFileUrl(presentation, fileType);
-
-  // For PPTX files, we don't load slides as images anymore
-  useEffect(() => {
-    if (fileType === 'pptx') {
-      setLoading(false);
-    }
-  }, [fileType]);
+  // Always get PDF URL for preview (we now generate PDF for both pptx and pdf types)
+  const pdfUrl = getFileUrl(presentation, 'pdf');
+  // Get PPTX URL for download button (only if original type was pptx)
+  const pptxUrl = fileType === 'pptx' ? getFileUrl(presentation, 'pptx') : null;
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -69,7 +44,7 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
 
   const onDocumentLoadError = (error: Error) => {
     console.error('Error loading document:', error);
-    setError('Failed to load document');
+    setError('Failed to load PDF preview. The file may still be processing.');
     setLoading(false);
   };
 
@@ -80,7 +55,7 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
     }
   };
 
-  if (!fileUrl) {
+  if (!pdfUrl) {
     return (
       <div className={cn('flex items-center justify-center h-full', className)}>
         <p className="text-text-muted">No document available</p>
@@ -91,41 +66,65 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   return (
     <div className={cn('flex flex-col h-full bg-background', className)}>
       {/* Navigation controls at the top */}
-      {numPages && numPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => handlePageChange(pageNumber - 1)}
-            disabled={pageNumber <= 1}
-            className={cn(
-              'p-2 rounded-lg transition-colors',
-              pageNumber === 1
-                ? 'text-text-muted cursor-not-allowed opacity-50'
-                : 'text-text hover:bg-primary/10'
-            )}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      <div className="flex items-center justify-center gap-4 py-2">
+        {numPages && numPages > 1 && (
+          <>
+            <button
+              onClick={() => handlePageChange(pageNumber - 1)}
+              disabled={pageNumber <= 1}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                pageNumber === 1
+                  ? 'text-text-muted cursor-not-allowed opacity-50'
+                  : 'text-text hover:bg-primary/10'
+              )}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
 
-          <div className="text-text">
-            <span className="font-medium">{pageNumber}</span>
-            <span className="text-text-muted mx-2">/</span>
-            <span className="text-text-muted">{numPages}</span>
-          </div>
+            <div className="text-text">
+              <span className="font-medium">{pageNumber}</span>
+              <span className="text-text-muted mx-2">/</span>
+              <span className="text-text-muted">{numPages}</span>
+            </div>
 
-          <button
-            onClick={() => handlePageChange(pageNumber + 1)}
-            disabled={pageNumber >= numPages}
-            className={cn(
-              'p-2 rounded-lg transition-colors',
-              pageNumber === numPages
-                ? 'text-text-muted cursor-not-allowed opacity-50'
-                : 'text-text hover:bg-primary/10'
-            )}
+            <button
+              onClick={() => handlePageChange(pageNumber + 1)}
+              disabled={pageNumber >= numPages}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                pageNumber === numPages
+                  ? 'text-text-muted cursor-not-allowed opacity-50'
+                  : 'text-text hover:bg-primary/10'
+              )}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
+        
+        {/* Download buttons */}
+        <div className="flex gap-2 ml-4">
+          {pptxUrl && (
+            <a
+              href={pptxUrl}
+              download={`${presentation.main_topic}.pptx`}
+              className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm rounded-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center gap-1 font-medium shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              PPTX
+            </a>
+          )}
+          <a
+            href={pdfUrl}
+            download={`${presentation.main_topic}.pdf`}
+            className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center gap-1 font-medium shadow-sm"
           >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+            <Download className="w-4 h-4" />
+            PDF
+          </a>
         </div>
-      )}
+      </div>
 
       {/* Document viewer */}
       <div className="flex-1 overflow-auto flex items-start justify-center pt-4">
@@ -134,61 +133,38 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
         )}
 
         {error && (
-          <div className="text-red-500 pt-8">{error}</div>
-        )}
-
-        {fileType === 'pdf' ? (
-          <Document
-            file={fileUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            onLoadError={onDocumentLoadError}
-            loading=""
-            className="flex justify-center"
-          >
-            <Page
-              pageNumber={pageNumber}
-              className="shadow-2xl rounded-lg"
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-              width={Math.min(window.innerWidth - 400, 900)}
-            />
-          </Document>
-        ) : (
-          // Show PPTX download card
-          <div className="flex items-center justify-center h-full p-8">
-            <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-              <div className="flex flex-col items-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M15,18V16H8V18H15M15,14V12H8V14H15M13,9V3.5L18.5,9H13Z"/>
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {presentation.main_topic}
-                </h3>
-                <p className="text-gray-600 text-center mb-6">
-                  PowerPoint Presentation
-                </p>
+          <div className="text-red-500 pt-8 text-center px-4">
+            {error}
+            {pptxUrl && (
+              <div className="mt-4">
                 <a
-                  href={fileUrl}
+                  href={pptxUrl}
                   download={`${presentation.main_topic}.pptx`}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 flex items-center gap-2 font-medium shadow-md"
+                  className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all inline-flex items-center gap-2 font-medium shadow-md"
                 >
                   <Download className="w-5 h-5" />
-                  Download PPTX
-                </a>
-                <a
-                  href={fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 text-blue-600 hover:text-blue-700 text-sm underline"
-                >
-                  Open in PowerPoint Online
+                  Download PPTX Instead
                 </a>
               </div>
-            </div>
+            )}
           </div>
         )}
+
+        <Document
+          file={pdfUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
+          loading=""
+          className="flex justify-center"
+        >
+          <Page
+            pageNumber={pageNumber}
+            className="shadow-2xl rounded-lg"
+            renderTextLayer={true}
+            renderAnnotationLayer={true}
+            width={Math.min(window.innerWidth - 400, 900)}
+          />
+        </Document>
       </div>
     </div>
   );
