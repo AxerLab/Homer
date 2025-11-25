@@ -1,7 +1,7 @@
 from typing import List
 from ..llm import model
 from ..models.presentation.presentation import SlidePresentation
-from pydantic_ai import Agent, NativeOutput
+from pydantic_ai import Agent
 from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
 from .prompts import (
     generator_system_prompt,

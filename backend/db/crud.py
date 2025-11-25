@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models
-from typing import Dict, Any, Optional
-import json
+from typing import Optional
+
 
 def create_presentation(db: Session, main_topic: str, json_object: str, file_type: str = "pdf") -> models.Presentation:
     """Create a new presentation with generated JSON"""

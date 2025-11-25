@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Dict, Any, Literal
-import json
+from pydantic import BaseModel, Field
+from typing import Literal
+
 
 class PresentationCreate(BaseModel):
     """POST request - create presentation and generate file"""

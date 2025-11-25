@@ -77,7 +77,7 @@ def is_converter_available() -> bool:
     try:
         # Try a simple health check (the service doesn't have a health endpoint,
         # but we can check if it responds)
-        response = requests.get("http://localhost:5001/", timeout=5)
+        requests.get("http://localhost:5001/", timeout=5)
         # Any response means the service is up
         return True
     except Exception as e:

@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from typing import List
 import json
-import os
 from pathlib import Path
 
 from backend.db import crud, models
@@ -29,7 +29,6 @@ PDF_DIR.mkdir(exist_ok=True)
 app = FastAPI(title="AI Slides API", version="1.0.0")
 
 # Add CORS for frontend development
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
@@ -39,7 +38,6 @@ app.add_middleware(
 )
 
 # Serve generated files for local development
-from fastapi.staticfiles import StaticFiles
 if OUTPUT_DIR.exists():
     app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
 
@@ -92,7 +90,7 @@ def create_presentation(
                 output_filename=pdf_output_path
             )
 
-        return schemas.PresentationCreateResponse(id=db_presentation.id)
+        return schemas.PresentationCreateResponse(id=str(db_presentation.id))
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating presentation: {str(e)}")
@@ -108,8 +106,8 @@ def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Presentation not found")
 
     return schemas.PresentationGetResponse(
-        id=db_presentation.id,
-        main_topic=db_presentation.main_topic,
+        id=str(db_presentation.id),
+        main_topic=str(db_presentation.main_topic),
         file_type=getattr(db_presentation, 'file_type', 'pdf')  # Use getattr for backward compatibility
     )
 
@@ -160,7 +158,7 @@ def update_slide(
 
     try:
         # Parse existing JSON
-        current_presentation = AISlidesPresentation.model_validate_json(db_presentation.json_object)
+        current_presentation = AISlidesPresentation.model_validate_json(str(db_presentation.json_object))
 
         # Validate slide number
         if slide_data.slide_number > len(current_presentation.slides):
@@ -174,7 +172,7 @@ def update_slide(
             presentation=current_presentation,
             slide_index=slide_data.slide_number - 1,  # Convert to 0-based index
             edit_prompt=slide_data.slide_content,
-            original_prompt=db_presentation.main_topic
+            original_prompt=str(db_presentation.main_topic)
         )
 
         # Update database with new JSON
