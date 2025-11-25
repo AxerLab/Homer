@@ -5,14 +5,14 @@ import json
 import os
 from pathlib import Path
 
-from .db import crud, models
-from .api import schemas
-from .db.session import get_db, engine
-from .core.generator.generator import generate_presentation
-from .core.iterator.iterator import regenerate_slide
-from .core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
-from .core.engines.pptx.json_handler import structure_to_ppt
-from .core.engines.tex.generator import generate_tex_and_pdf
+from backend.db import crud, models
+from backend.api import schemas
+from backend.db.session import get_db, engine
+from backend.core.generator.generator import generate_presentation
+from backend.core.iterator.iterator import regenerate_slide
+from backend.core.models.presentation.presentation import SlidePresentation as AISlidesPresentation
+from backend.core.engines.pptx.json_handler import structure_to_ppt
+from backend.core.engines.tex.generator import generate_tex_and_pdf
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
