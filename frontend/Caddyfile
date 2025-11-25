@@ -1,0 +1,20 @@
+# Caddy configuration for SPA (Single Page Application)
+# This ensures all routes fall back to index.html for client-side routing
+
+:{$PORT:3000} {
+    root * /app/dist
+    encode gzip
+    
+    # Handle SPA routing - try the file, then fallback to index.html
+    try_files {path} /index.html
+    
+    file_server
+    
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
