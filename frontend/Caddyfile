@@ -12,7 +12,13 @@
     try_files {path} /index.html
 
     # Reverse proxy API requests to the backend service
-    reverse_proxy /api/* {$BACKEND_URL}
-    reverse_proxy /health {$BACKEND_URL}
-    reverse_proxy /generated_files/* {$BACKEND_URL}
+    reverse_proxy /api/* {$BACKEND_URL} {
+        header_up Host {upstream_hostport}
+    }
+    reverse_proxy /health {$BACKEND_URL} {
+        header_up Host {upstream_hostport}
+    }
+    reverse_proxy /generated_files/* {$BACKEND_URL} {
+        header_up Host {upstream_hostport}
+    }
 }
