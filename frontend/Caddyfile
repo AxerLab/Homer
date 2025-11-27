@@ -1,0 +1,21 @@
+:443 {
+    # Set the root directory for static files
+    root * /srv
+
+    # Enable Gzip compression
+    encode gzip
+
+    # Serve static files
+    file_server
+
+    # Handle SPA routing (redirect to index.html if file not found)
+    try_files {path} /index.html
+
+    # Reverse proxy API requests to the backend service
+    reverse_proxy /api/* {$BACKEND_URL}
+    reverse_proxy /health {$BACKEND_URL}
+    reverse_proxy /generated_files/* {$BACKEND_URL}
+
+    # Use internal CA for local development (removes need for real domain)
+    tls internal
+}

@@ -13,22 +13,24 @@ RUN npm ci
 COPY . .
 
 # Build the application
+ARG VITE_API_BASE_URL=""
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
-FROM nginx:alpine
-
-# Remove default nginx static assets
-RUN rm -rf /usr/share/nginx/html/*
+# Stage 2: Serve the application with Caddy
+FROM caddy:alpine
 
 # Copy built assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /srv
 
-# Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy Caddy configuration
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# Expose port 80
+# Expose ports
 EXPOSE 80
+EXPOSE 443
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Default backend URL (can be overridden at runtime)
+ENV BACKEND_URL=http://backend:8000
+
+# Start Caddy
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
