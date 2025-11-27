@@ -15,7 +15,4 @@
     reverse_proxy /api/* {$BACKEND_URL}
     reverse_proxy /health {$BACKEND_URL}
     reverse_proxy /generated_files/* {$BACKEND_URL}
-
-    # Use internal CA for local development (removes need for real domain)
-    tls internal
 }

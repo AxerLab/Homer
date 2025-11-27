@@ -27,7 +27,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 
 # Expose ports
 EXPOSE 80
-EXPOSE 443
+
 
 # Default backend URL (can be overridden at runtime)
 ENV BACKEND_URL=http://backend:8000
