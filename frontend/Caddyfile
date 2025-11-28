@@ -2,7 +2,6 @@
   root * /srv
   encode gzip
 
-  # API PROXIES FIRST (before file_server!)
   handle /api/* {
     reverse_proxy {$BACKEND_URL}
   }
@@ -13,8 +12,9 @@
     reverse_proxy {$BACKEND_URL}
   }
 
-  # Static files LAST
-  file_server {
-    try_files {path} /index.html
+  # Catchall SPA fallback for TanStack Router
+  handle {
+    try_files {path} {path}/ /index.html
+    file_server
   }
 }
