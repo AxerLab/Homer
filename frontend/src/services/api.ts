@@ -1,7 +1,7 @@
 // Enhanced API client with proper error handling and logging
 import type { Presentation, CreatePresentationRequest } from '@/types/api';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -24,7 +24,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       try {
         const text = await response.text();
         if (text) errorMessage = text;
-      } catch {}
+      } catch { }
     }
 
     console.error(`API Error: ${errorMessage}`);
@@ -53,7 +53,7 @@ export const presentationApi = {
   },
 
   // Create a new presentation
-  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx'): Promise<{id: string}> {
+  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx'): Promise<{ id: string }> {
     console.log('Creating presentation:', { topic, fileType });
 
     const response = await fetch(`${API_BASE_URL}/api/v1/presentations/`, {
@@ -68,7 +68,7 @@ export const presentationApi = {
       } as CreatePresentationRequest),
     });
 
-    const data = await handleResponse<{id: string}>(response);
+    const data = await handleResponse<{ id: string }>(response);
     console.log('Presentation created:', data);
     return data;
   },

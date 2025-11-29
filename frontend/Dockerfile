@@ -11,7 +11,8 @@ RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
-ARG VITE_BACKEND_URL=""
+ARG VITE_API_BASE_URL=""
+
 # Build the application
 RUN npm run build
 
@@ -28,8 +29,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Expose ports
 EXPOSE 80
 
-# https://docs.railway.com/guides/dockerfiles#using-variables-at-build-time
-ENV VITE_BACKEND_URL="http://localhost:8000"
+ENV BACKEND_URL="http://localhost:8000"
 
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

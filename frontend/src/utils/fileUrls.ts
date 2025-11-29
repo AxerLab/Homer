@@ -7,7 +7,7 @@
 
 import type { Presentation } from '@/types/api';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Check if we should use local file serving (development mode)
 const USE_LOCAL_FILES = import.meta.env.VITE_USE_LOCAL_FILES !== 'false';
