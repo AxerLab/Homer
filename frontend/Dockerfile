@@ -14,6 +14,7 @@ COPY . .
 
 # Build the application
 RUN npm run build
+ARG VITE_BACKEND_URL
 
 # Stage 2: Serve the application with Caddy
 FROM caddy:alpine
