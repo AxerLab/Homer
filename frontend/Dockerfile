@@ -13,7 +13,6 @@ RUN npm ci
 COPY . .
 
 # Build the application
-ARG VITE_API_BASE_URL=""
 RUN npm run build
 
 # Stage 2: Serve the application with Caddy

@@ -5,10 +5,9 @@ import { SlideCanvas } from './components/presentation/SlideCanvas'
 import { SlideContentPanel } from './components/presentation/SlideContentPanel'
 import { GenerateButton } from './components/presentation/GenerateButton'
 import { cn } from './lib/utils'
-import type { PastChat, Presentation } from './types'
+import type { PastChat } from './types'
+import type { Presentation } from './types/api'
 import { presentationApi } from './services/api'
-
-// Removed mock data - will only show real presentations from backend
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -33,7 +32,7 @@ function App() {
       const chats: PastChat[] = presos.map(p => ({
         id: p.id,
         title: p.main_topic,
-        timestamp: p.createdAt || new Date(),
+        timestamp: new Date(),
         presentationId: p.id
       }))
 
@@ -59,7 +58,8 @@ function App() {
       // Map TeX to pdf for API
       const fileType = format === 'TeX' ? 'pdf' : format.toLowerCase() as 'pptx' | 'pdf'
 
-      const presentation = await presentationApi.createPresentation(prompt, fileType)
+      const presentation_id = await presentationApi.createPresentation(prompt, fileType)
+      const presentation = await presentationApi.getPresentation(presentation_id.id)
 
       // Add to presentations list
       setPresentations(prev => [presentation, ...(prev || [])])
@@ -76,10 +76,6 @@ function App() {
       // Set as current presentation
       setCurrentPresentation(presentation)
       setSelectedChatId(presentation.id)
-
-      // Download the file
-      const fileUrl = presentationApi.getFileUrl(presentation.id, fileType)
-      window.open(fileUrl, '_blank')
 
     } catch (error) {
       console.error('Failed to generate presentation:', error)
@@ -111,11 +107,11 @@ function App() {
 
     try {
       await presentationApi.deletePresentation(chatId)
-      
+
       // Remove from state
       setPresentations(prev => (prev || []).filter(p => p.id !== chatId))
       setPastChats(prev => prev.filter(c => c.id !== chatId))
-      
+
       // If we deleted the current presentation, clear selection
       if (selectedChatId === chatId) {
         setSelectedChatId(undefined)

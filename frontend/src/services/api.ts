@@ -1,7 +1,7 @@
 // Enhanced API client with proper error handling and logging
 import type { Presentation, CreatePresentationRequest } from '@/types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.BACKEND_URL ?? 'http://localhost:8000';
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -53,7 +53,7 @@ export const presentationApi = {
   },
 
   // Create a new presentation
-  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx'): Promise<Presentation> {
+  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx'): Promise<{id: string}> {
     console.log('Creating presentation:', { topic, fileType });
 
     const response = await fetch(`${API_BASE_URL}/api/v1/presentations/`, {
@@ -68,7 +68,7 @@ export const presentationApi = {
       } as CreatePresentationRequest),
     });
 
-    const data = await handleResponse<Presentation>(response);
+    const data = await handleResponse<{id: string}>(response);
     console.log('Presentation created:', data);
     return data;
   },
@@ -161,12 +161,6 @@ export const presentationApi = {
     }
 
     console.log('Presentation deleted successfully');
-  },
-
-  // Download file
-  getFileUrl(presentationId: string, fileType: 'pdf' | 'pptx'): string {
-    // Direct file serving from backend
-    return `${API_BASE_URL}/generated_files/${fileType}/${presentationId}.${fileType}`;
   },
 
   // Check if backend is accessible

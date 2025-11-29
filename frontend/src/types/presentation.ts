@@ -12,11 +12,3 @@ export type PastChat = {
   timestamp: Date
   presentationId?: string
 }
-
-export type Presentation = {
-  id: string
-  main_topic: string
-  slides?: Slide[]
-  createdAt?: Date
-  updatedAt?: Date
-}

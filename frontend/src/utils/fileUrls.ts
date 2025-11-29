@@ -7,7 +7,7 @@
 
 import type { Presentation } from '@/types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.BACKEND_URL || 'http://localhost:8000';
 
 // Check if we should use local file serving (development mode)
 const USE_LOCAL_FILES = import.meta.env.VITE_USE_LOCAL_FILES !== 'false';
@@ -24,14 +24,9 @@ export function getFileUrl(
   presentation: Presentation,
   fileType: 'pdf' | 'pptx' | 'tex'
 ): string | null {
-  // First, check if backend provided direct URLs (production scenario)
-  if (presentation.file_urls?.[fileType]) {
-    return presentation.file_urls[fileType];
-  }
 
-  // In development or if backend doesn't provide URLs, construct local path
-  if (USE_LOCAL_FILES && presentation.id) {
-    // For local development, files are at:
+  if (presentation.id) {
+    // Files are at:
     // - /generated_files/pdf/{uuid}.pdf
     // - /generated_files/pptx/{uuid}.pptx
     // - /generated_files/pdf/{uuid}.tex (tex files are stored in pdf folder)

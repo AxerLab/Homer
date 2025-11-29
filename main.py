@@ -95,6 +95,26 @@ def create_presentation(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating presentation: {str(e)}")
 
+@app.get("/api/v1/presentations/")
+def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    List all presentations with pagination
+    """
+    presentations = crud.get_presentations(db, skip=skip, limit=limit)
+    return {
+        "presentations": [
+            {
+                "id": p.id,
+                "main_topic": p.main_topic,
+                "file_type": getattr(p, 'file_type', 'pdf')  # Use getattr for backward compatibility
+            }
+            for p in presentations
+        ],
+        "skip": skip,
+        "limit": limit,
+        "total": len(presentations)
+    }
+
 @app.get("/api/v1/presentations/{presentation_id}", response_model=schemas.PresentationGetResponse)
 def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
     """
@@ -195,25 +215,6 @@ def update_slide(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating slide: {str(e)}")
 
-@app.get("/api/v1/presentations/")
-def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """
-    List all presentations with pagination
-    """
-    presentations = crud.get_presentations(db, skip=skip, limit=limit)
-    return {
-        "presentations": [
-            {
-                "id": p.id,
-                "main_topic": p.main_topic,
-                "file_type": getattr(p, 'file_type', 'pdf')  # Use getattr for backward compatibility
-            }
-            for p in presentations
-        ],
-        "skip": skip,
-        "limit": limit,
-        "total": len(presentations)
-    }
 
 # Health check endpoint
 @app.get("/health")

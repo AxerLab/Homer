@@ -15,18 +15,6 @@ export type PastChat = {
   presentationId?: string
 }
 
-export type Presentation = {
-  id: string
-  main_topic: string
-  slides?: Slide[]
-  createdAt?: Date
-  updatedAt?: Date
-  file_urls?: {
-    pdf?: string
-    pptx?: string
-  }
-}
-
 // API types
 export type CreatePresentationRequest = {
   main_topic: string
