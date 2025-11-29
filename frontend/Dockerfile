@@ -27,9 +27,8 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Expose ports
 EXPOSE 80
 
-
-# Default backend URL (can be overridden at runtime)
-ENV VITE_BACKEND_URL=http://localhost:8000
+# https://docs.railway.com/guides/dockerfiles#using-variables-at-build-time
+ARG VITE_BACKEND_URL
 
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
