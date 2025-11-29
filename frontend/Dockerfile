@@ -11,7 +11,7 @@ RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
-ARG VITE_API_BASE_URL=""
+ARG VITE_API_BASE_URL
 
 # Build the application
 RUN npm run build
@@ -29,7 +29,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Expose ports
 EXPOSE 80
 
-ENV BACKEND_URL="http://localhost:8000"
+ARG BACKEND_URL
 
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
