@@ -29,7 +29,7 @@ EXPOSE 80
 
 
 # Default backend URL (can be overridden at runtime)
-ENV BACKEND_URL=http://localhost:8000
+ENV VITE_BACKEND_URL=http://localhost:8000
 
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

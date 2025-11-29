@@ -3,13 +3,13 @@
   encode gzip
 
   handle /api/* {
-    reverse_proxy {$BACKEND_URL}
+    reverse_proxy {$VITE_BACKEND_URL}
   }
   handle /health {
-    reverse_proxy {$BACKEND_URL}
+    reverse_proxy {$VITE_BACKEND_URL}
   }
   handle /generated_files/* {
-    reverse_proxy {$BACKEND_URL}
+    reverse_proxy {$VITE_BACKEND_URL}
   }
 
   # Catchall SPA fallback for TanStack Router
