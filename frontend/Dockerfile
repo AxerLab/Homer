@@ -11,7 +11,7 @@ RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
-ARG VITE_API_BASE_URL
+ARG VITE_API_BASE_URL=""
 
 # Build the application
 RUN npm run build
