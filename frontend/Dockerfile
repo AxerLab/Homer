@@ -29,7 +29,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 EXPOSE 80
 
 # https://docs.railway.com/guides/dockerfiles#using-variables-at-build-time
-ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL="http://localhost:8000"
 
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
