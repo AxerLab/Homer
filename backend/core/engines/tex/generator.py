@@ -102,26 +102,31 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
     tex_output_path = output_dir / pdf_basename
     doc.generate_tex(str(tex_output_path))
 
-    # Reconstruct the full path to the .tex file for docker compose exec command
-    tex_file = Path(f"{tex_output_path}.tex")
-    tex_filename = tex_file.name
+    # Reconstruct the full path to the .tex file
+    tex_file_path = Path(f"{tex_output_path}.tex")
     
-    # Use docker compose exec to run pdflatex in the tex-pdf service
-    command = [
-        "docker", "compose", "exec", "-T",
-        "tex-pdf",
-        "pdflatex",
-        "-interaction=nonstopmode",
-        tex_filename
-    ]
+    # Call the TeX service
+    import requests
+    import os
+    
+    tex_service_url = os.getenv("TEX_SERVICE_URL", "http://localhost:8001")
+    url = f"{tex_service_url}/generate-pdf"
     
     try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        print("Error during LaTeX compilation:")
-        print(e.stdout)
-        print(e.stderr)
+        with open(tex_file_path, 'rb') as f:
+            files = {'file': (tex_file_path.name, f, 'application/x-tex')}
+            response = requests.post(url, files=files, timeout=120)
+        
+        if response.status_code == 200:
+            pdf_path = output_dir / f"{pdf_basename}.pdf"
+            with open(pdf_path, 'wb') as f:
+                f.write(response.content)
+            return pdf_path.resolve()
+        else:
+            print(f"TeX Service Error: {response.status_code} - {response.text}")
+            raise Exception(f"TeX Service failed: {response.text}")
+            
+    except Exception as e:
+        print(f"Error calling TeX service: {e}")
         raise
-
-    return Path(output_dir / f"{pdf_basename}.pdf").resolve()
 

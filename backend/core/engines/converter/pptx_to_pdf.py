@@ -12,7 +12,9 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # URL of the pdf-converter service (exposed on port 5001)
-PDF_CONVERTER_URL = "http://localhost:5001/convert"
+# URL of the pdf-converter service (exposed on port 5001)
+import os
+PDF_CONVERTER_URL = os.getenv("PDF_CONVERTER_URL", "http://localhost:5001/convert")
 
 
 def convert_pptx_to_pdf(pptx_path: str, pdf_path: str) -> bool:
