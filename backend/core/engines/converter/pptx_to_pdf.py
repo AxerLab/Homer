@@ -77,9 +77,11 @@ def is_converter_available() -> bool:
         bool: True if service is available, False otherwise
     """
     try:
-        # Try a simple health check (the service doesn't have a health endpoint,
-        # but we can check if it responds)
-        requests.get("http://localhost:5001/", timeout=5)
+        # Derive base URL from the converter URL (e.g. http://host:5001/convert -> http://host:5001/)
+        base_url = PDF_CONVERTER_URL.replace("/convert", "/")
+        
+        # Try a simple health check at the root
+        requests.get(base_url, timeout=5)
         # Any response means the service is up
         return True
     except Exception as e:
