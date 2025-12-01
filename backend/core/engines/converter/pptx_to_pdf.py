@@ -8,13 +8,10 @@ using the wteja/pdf-converter Docker container which exposes an HTTP API.
 import requests
 import logging
 from pathlib import Path
+import os
 
 logger = logging.getLogger(__name__)
-
-# URL of the pdf-converter service (exposed on port 5001)
-# URL of the pdf-converter service (exposed on port 5001)
-import os
-PDF_CONVERTER_URL = os.getenv("PDF_CONVERTER_URL", "http://localhost:5001/convert")
+PDF_CONVERTER_URL = os.getenv("PDF_CONVERTER_URL")
 
 
 def convert_pptx_to_pdf(pptx_path: str, pdf_path: str) -> bool:
@@ -38,12 +35,22 @@ def convert_pptx_to_pdf(pptx_path: str, pdf_path: str) -> bool:
         
         logger.info(f"Converting {pptx_path} to PDF using wteja/pdf-converter")
         
+        # Construct the conversion URL
+        convert_url = f"{PDF_CONVERTER_URL.rstrip('/')}/convert"
+
         # Send the file to the conversion service
         with open(pptx_path, 'rb') as f:
             files = {'file': (pptx_file.name, f, 'application/vnd.openxmlformats-officedocument.presentationml.presentation')}
-            response = requests.post(PDF_CONVERTER_URL, files=files, timeout=120)
+            response = requests.post(convert_url, files=files, timeout=120)
         
         if response.status_code == 200:
+            content_length = len(response.content)
+            logger.info(f"Received PDF response from service. Size: {content_length} bytes")
+            
+            if content_length == 0:
+                logger.error("Received empty PDF content from service")
+                return False
+
             # Save the PDF response
             with open(pdf_path, 'wb') as f:
                 f.write(response.content)
@@ -77,11 +84,8 @@ def is_converter_available() -> bool:
         bool: True if service is available, False otherwise
     """
     try:
-        # Derive base URL from the converter URL (e.g. http://host:5001/convert -> http://host:5001/)
-        base_url = PDF_CONVERTER_URL.replace("/convert", "/")
-        
         # Try a simple health check at the root
-        requests.get(base_url, timeout=5)
+        requests.get(PDF_CONVERTER_URL, timeout=5)
         # Any response means the service is up
         return True
     except Exception as e:
