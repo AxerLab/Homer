@@ -16,9 +16,9 @@ class Slide(BaseModel):
     layout: SlideLayout = Field(
         ..., description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
     )
-    # image: Optional[str] = Field(
-    #     None, description="Optional image description or URL", max_length=500
-    # )
+    image: Optional[str] = Field(
+        None, description="Optional image description or URL. Use only on picture_with_caption layout", max_length=500
+    )
 
     # conflicts with blank layout
     # @field_validator("title")
@@ -136,5 +136,20 @@ class Slide(BaseModel):
                 raise ValueError(
                     f"Slides with layout '{self.layout}' must have both 'text', "
                     "'text2' content"
+                )
+        
+        if self.layout == SlideLayout.PICTURE_WITH_CAPTION:
+            if not self.image:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have an 'image' description or URL"
+                )
+            if not self.content.text:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content as caption"
+                )
+            if not self.content.text.para and not self.content.text.bullet:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content "
+                    "as caption and not bullet points"
                 )
         return self
