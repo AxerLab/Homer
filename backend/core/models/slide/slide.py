@@ -17,7 +17,7 @@ class Slide(BaseModel):
         ..., description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
     )
     image: Optional[str] = Field(
-        None, description="Optional image description or URL. Use only on picture_with_caption layout", max_length=500
+        None, description="Optional image URL. Use only on picture_with_caption layout", max_length=500
     )
 
     # conflicts with blank layout
