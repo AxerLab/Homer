@@ -1,8 +1,12 @@
 from pptx import Presentation
 from pptx.shapes.base import BaseShape
 from pptx.text.text import TextFrame
+from pptx.shapes.placeholder import PicturePlaceholder
 from ...models.content.textcontent.textcontent import TextContent
 from ...models.content.textcontent.comparison import Comparison
+import requests
+from io import BytesIO
+from urllib.parse import urlparse
 
 
 class PPTXGenerator:
@@ -17,7 +21,7 @@ class PPTXGenerator:
             "title_only": 5,
             "blank": 6,
             "content_with_caption": 7,
-            # "picture_with_caption": 8,
+            "picture_with_caption": 8,
         }
 
     def _set_placeholder_text(
@@ -37,6 +41,40 @@ class PPTXGenerator:
                         p = text_frame.add_paragraph()
                         p.text = point
                         p.level = 1
+
+    def _set_placeholder_picture(
+        self, placeholder: BaseShape | None, image_path: str | None
+    ) -> None:
+        """Safely insert a picture into a picture placeholder.
+        
+        Args:
+            placeholder: The placeholder shape to insert the picture into
+            image_path: Path to the image file or URL to insert
+            
+        Note:
+            The placeholder reference becomes invalid after calling insert_picture(),
+            so this method should be called last when working with a placeholder.
+            If image_path is a URL, it will be downloaded to a BytesIO object.
+        """
+        if placeholder is None or image_path is None:
+            return
+        try:
+            if isinstance(placeholder, PicturePlaceholder):
+                # Check if image_path is a URL
+                parsed = urlparse(image_path)
+                if parsed.scheme in ('http', 'https'):
+                    # Download the image from URL
+                    response = requests.get(image_path, timeout=10)
+                    response.raise_for_status()
+                    image_file = BytesIO(response.content)
+                    placeholder.insert_picture(image_file)
+                else:
+                    # Local file path
+                    placeholder.insert_picture(image_path)
+        except (AttributeError, TypeError, requests.RequestException, OSError):
+            # Not a picture placeholder, invalid placeholder type, 
+            # network error, or file error
+            pass
 
 
     def add_title_slide(self, title: str, subtitle: str):
@@ -143,19 +181,19 @@ class PPTXGenerator:
         self._set_placeholder_text(content_placeholder, content)
         self._set_placeholder_text(caption_placeholder, caption)
 
-    # def picture_with_caption_slide(self, title: str, image_path: str, caption: str):
-    #     '''
-    #     Add a picture with caption slide to the presentation.
-    #     '''
-    #     slide_layout = self.prs.slide_layouts[self.layouts_indices["picture_with_caption"]]
-    #     slide = self.prs.slides.add_slide(slide_layout)
-    #     title_placeholder = slide.shapes.title
-    #     image_placeholder = slide.placeholders[1]
-    #     caption_placeholder = slide.placeholders[2]
-    #     title_placeholder.text = title
-    #     # Add image
-    #     image_placeholder.insert_picture(image_path)
-    #     caption_placeholder.text = caption
+    def picture_with_caption_slide(self, title: str, image_path: str, caption: str):
+        '''
+        Add a picture with caption slide to the presentation.
+        '''
+        slide_layout = self.prs.slide_layouts[self.layouts_indices["picture_with_caption"]]
+        slide = self.prs.slides.add_slide(slide_layout)
+        title_placeholder = slide.shapes.title
+        image_placeholder = slide.placeholders[1]
+        caption_placeholder = slide.placeholders[2]
+        self._set_placeholder_text(title_placeholder, title)
+        self._set_placeholder_text(caption_placeholder, caption)
+        # Add image last since insert_picture invalidates the placeholder reference
+        self._set_placeholder_picture(image_placeholder, image_path)
 
     def save(self, file_path: str):
         self.prs.save(file_path)

@@ -1,5 +1,6 @@
 from typing import Optional
-from pydantic import BaseModel, Field, model_validator
+import re
+from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
 
@@ -153,3 +154,27 @@ class Slide(BaseModel):
                     "as caption and not bullet points"
                 )
         return self
+
+    @field_validator("image")
+    @classmethod
+    def validate_image_link(cls, v: str) -> Optional[str]:
+        """Validate image URL format."""
+        if v is not None:
+            if not isinstance(v, str):
+                raise ValueError("Image URL must be a string")
+            if len(v.strip()) == 0:
+                return None  # Convert empty string to None
+            v = v.strip()
+            
+            url_pattern = re.compile(
+                r'^https?://'  # http:// or https://
+                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+                r'localhost|'  # localhost...
+                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+                r'(?::\d+)?'  # optional port
+                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+            
+            if not url_pattern.match(v):
+                raise ValueError("Invalid URL format. Must be a valid HTTP or HTTPS URL")
+            return v
+        return v

@@ -14,6 +14,7 @@ from backend.core.models.presentation.presentation import SlidePresentation as A
 from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
+import logfire
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -40,6 +41,9 @@ app.add_middleware(
 # Serve generated files for local development
 if OUTPUT_DIR.exists():
     app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
+
+logfire.configure()
+logfire.instrument_pydantic_ai()
 
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 def create_presentation(
