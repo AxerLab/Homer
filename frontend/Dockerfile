@@ -1,20 +1,20 @@
 # Stage 1: Build the application
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker cache
-COPY package.json package-lock.json ./
+# Copy package.json and bun.lock first to leverage Docker cache
+COPY package.json bun.lock ./
 
 # Install dependencies
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
 ARG VITE_API_BASE_URL=""
 
 # Build the application
-RUN npm run build
+RUN bun run build
 
 
 # Stage 2: Serve the application with Caddy
