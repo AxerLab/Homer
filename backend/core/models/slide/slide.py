@@ -142,7 +142,7 @@ class Slide(BaseModel):
         if self.layout == SlideLayout.PICTURE_WITH_CAPTION:
             if not self.image:
                 raise ValueError(
-                    f"Slides with layout '{self.layout}' must have an 'image' description or URL"
+                    f"Slides with layout '{self.layout}' must have an 'image' URL"
                 )
             if not self.content.text:
                 raise ValueError(

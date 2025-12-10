@@ -5,6 +5,11 @@ from ...models.layouts.slide_layout import SlideLayout
 from ...models.content.textcontent.textcontent import TextContent
 from typing import Union
 import subprocess
+import requests
+from io import BytesIO
+from urllib.parse import urlparse
+import tempfile
+import os
 
 def escape_latex(text: str) -> str:
     if text is None:
@@ -27,6 +32,61 @@ def content_to_latex(content: Union[TextContent, list]) -> str:
                 latex += f"\\item {escape_latex(item)}\n"
             latex += "\\end{itemize}\n"
     return latex
+
+def handle_image_for_latex(image_path: str, output_dir: Path) -> str:
+    """
+    Handle image path for LaTeX inclusion. Downloads URLs to temporary files.
+    
+    Args:
+        image_path: Path to the image file or URL
+        output_dir: Directory where temporary files should be saved
+        
+    Returns:
+        Local file path suitable for LaTeX inclusion
+    """
+    if not image_path:
+        return ""
+    
+    parsed = urlparse(image_path)
+    if parsed.scheme in ('http', 'https'):
+        try:
+            # Download the image from URL
+            response = requests.get(image_path, timeout=10)
+            response.raise_for_status()
+            
+            # Determine file extension from URL or content-type
+            ext = Path(parsed.path).suffix
+            if not ext:
+                content_type = response.headers.get('content-type', '')
+                if 'jpeg' in content_type or 'jpg' in content_type:
+                    ext = '.jpg'
+                elif 'png' in content_type:
+                    ext = '.png'
+                elif 'gif' in content_type:
+                    ext = '.gif'
+                else:
+                    ext = '.jpg'  # default
+            
+            # Save to a temporary file in the output directory
+            temp_file = tempfile.NamedTemporaryFile(
+                delete=False, 
+                suffix=ext, 
+                dir=output_dir
+            )
+            temp_file.write(response.content)
+            temp_file.close()
+            
+            return temp_file.name
+        except (requests.RequestException, OSError) as e:
+            print(f"Error downloading image from {image_path}: {e}")
+            return ""
+    else:
+        # Local file path - verify it exists
+        if Path(image_path).exists():
+            return image_path
+        else:
+            print(f"Warning: Image file not found: {image_path}")
+            return ""
 
 def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", output_filename: str = None):
     presentation = generate_presentation(original_prompt=original_prompt, user_prompt=user_prompt)
@@ -94,6 +154,19 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
             if slide.content.text2:
                 doc.append(NoEscape(r'{\tiny\par}'))
                 doc.append(NoEscape(content_to_latex(slide.content.text2)))
+        
+        elif slide.layout == SlideLayout.PICTURE_WITH_CAPTION:
+            if slide.image:
+                local_image_path = handle_image_for_latex(slide.image, output_dir)
+                if local_image_path:
+                    # Escape backslashes for Windows paths
+                    escaped_path = local_image_path.replace('\\', '/')
+                    doc.append(NoEscape(r'\begin{center}'))
+                    doc.append(NoEscape(f'\\includegraphics[width=0.8\\textwidth]{{{escaped_path}}}'))
+                    doc.append(NoEscape(r'\end{center}'))
+            if slide.content and slide.content.text and slide.content.text.para:
+                doc.append(NoEscape(r'{\tiny\par}'))
+                doc.append(NoEscape(escape_latex(slide.content.text.para)))
         
         doc.append(NoEscape(r'\end{frame}'))
 
