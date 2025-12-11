@@ -11,7 +11,7 @@ from pathlib import Path
 import os
 
 logger = logging.getLogger(__name__)
-PDF_CONVERTER_URL = os.getenv("PDF_CONVERTER_URL")
+PDF_CONVERTER_URL = os.getenv("PDF_CONVERTER_URL","http://localhost:5001")
 
 
 def convert_pptx_to_pdf(pptx_path: str, pdf_path: str) -> bool:

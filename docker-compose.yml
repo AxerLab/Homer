@@ -11,21 +11,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
-  tex-pdf:
+  tex-service:
     build:
-      context: .
-      dockerfile: Dockerfile.tex
-    volumes:
-      - ./generated_files/pdf:/workspace
-    working_dir: /workspace
-    command: tail -f /dev/null  # Keep container running
+      context: ./tex_service
+      dockerfile: Dockerfile
+    ports:
+      - '8001:8001'
     restart: unless-stopped
 
-  pptx2pdf:
-    image: wteja/pdf-converter
-    platform: linux/amd64
+  pptx-service:
+    build:
+      context: ./pptx_service
+      dockerfile: Dockerfile
     ports:
-      - '5001:5000'
+      - '5001:5001'
     restart: unless-stopped
 
 volumes:
