@@ -101,6 +101,9 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
         pdf_basename = p.stem
         output_dir = p.parent if p.parent != Path('.') else Path.cwd()
     
+    # Track image files that need to be sent to the TEX service
+    image_files = []
+    
     doc = Document(documentclass='beamer')
     doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
     doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
@@ -159,10 +162,12 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
             if slide.image:
                 local_image_path = handle_image_for_latex(slide.image, output_dir)
                 if local_image_path:
-                    # Escape backslashes for Windows paths
-                    escaped_path = local_image_path.replace('\\', '/')
+                    # Track image for sending to service
+                    image_files.append(local_image_path)
+                    # Use only filename (relative path) for TEX file - Docker container will have it in same dir
+                    image_filename = Path(local_image_path).name
                     doc.append(NoEscape(r'\begin{center}'))
-                    doc.append(NoEscape(f'\\includegraphics[width=0.8\\textwidth]{{{escaped_path}}}'))
+                    doc.append(NoEscape(f'\\includegraphics[width=0.8\\textwidth]{{{image_filename}}}'))
                     doc.append(NoEscape(r'\end{center}'))
             if slide.content and slide.content.text and slide.content.text.para:
                 doc.append(NoEscape(r'{\tiny\par}'))
@@ -186,9 +191,41 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
     url = f"{tex_service_url}/generate-pdf"
     
     try:
-        with open(tex_file_path, 'rb') as f:
-            files = {'file': (tex_file_path.name, f, 'application/x-tex')}
-            response = requests.post(url, files=files, timeout=120)
+        # Prepare files to send: TEX file + all image files
+        files_list = []
+        opened_files = []
+        
+        # Open TEX file
+        tex_file = open(tex_file_path, 'rb')
+        opened_files.append(tex_file)
+        files_list.append(('file', (tex_file_path.name, tex_file, 'application/x-tex')))
+        
+        # Add all image files with their original filenames
+        for img_path in image_files:
+            img_path_obj = Path(img_path)
+            if img_path_obj.exists():
+                img_file = open(img_path, 'rb')
+                opened_files.append(img_file)
+                ext = img_path_obj.suffix.lower()
+                mime_type = 'image/jpeg' if ext in ['.jpg', '.jpeg'] else 'image/png' if ext == '.png' else 'image/*'
+                files_list.append(('file', (img_path_obj.name, img_file, mime_type)))
+                print(f"Adding image to upload: {img_path_obj.name}")
+        
+        print(f"Uploading {len(files_list)} files to TEX service")
+        response = requests.post(url, files=files_list, timeout=120)
+        
+        # Close all opened files
+        for f in opened_files:
+            f.close()
+        
+        # Clean up temporary image files
+        for img_path in image_files:
+            img_path_obj = Path(img_path)
+            if img_path_obj.exists() and 'tmp' in img_path_obj.name:
+                try:
+                    img_path_obj.unlink()
+                except OSError:
+                    pass
         
         if response.status_code == 200:
             pdf_path = output_dir / f"{pdf_basename}.pdf"
@@ -201,5 +238,11 @@ def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str =
             
     except Exception as e:
         print(f"Error calling TeX service: {e}")
+        # Try to close any open files
+        try:
+            for f in opened_files:
+                f.close()
+        except:
+            pass
         raise
 
