@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface GenerateButtonProps {
-  onGenerate: (prompt: string, format: 'PPTX' | 'TeX') => void
+  onGenerate: (prompt: string, format: 'PPTX' | 'TeX', theme?: string) => void
   isGenerating?: boolean
   isSidebarOpen?: boolean
 }
@@ -16,6 +16,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const [prompt, setPrompt] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState<'PPTX' | 'TeX'>('PPTX')
+  const [selectedTheme, setSelectedTheme] = useState<string>('default')
   const dialogRef = useRef<HTMLDivElement>(null)
 
   // Click outside handler
@@ -34,7 +35,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
 
   const handleGenerate = () => {
     if (prompt.trim()) {
-      onGenerate(prompt, selectedFormat)
+      onGenerate(prompt, selectedFormat, selectedFormat === 'PPTX' ? selectedTheme : undefined)
       setPrompt('')
       setIsExpanded(false)
     }
@@ -81,7 +82,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                 className="w-full h-24 bg-background/50 border border-border rounded-lg px-4 py-3 text-text resize-none focus:outline-none focus:border-primary/50 placeholder:text-text-muted/50"
               />
 
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center justify-between mt-4 gap-4">
                 <div className="flex items-center gap-2 bg-background/50 rounded-full p-1">
                   {(['PPTX', 'TeX'] as const).map(format => (
                     <button
@@ -98,6 +99,18 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                     </button>
                   ))}
                 </div>
+
+                {selectedFormat === 'PPTX' && (
+                  <select
+                    value={selectedTheme}
+                    onChange={(e) => setSelectedTheme(e.target.value)}
+                    className="px-3 py-1.5 bg-background/50 border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50"
+                  >
+                    <option value="default">Default</option>
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                  </select>
+                )}
 
                 {prompt.trim() ? (
                   <button

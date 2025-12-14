@@ -80,7 +80,7 @@ def create_presentation(
         # Generate file with UUID as name
         if presentation.file_type == "pptx":
             file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
-            structure_to_ppt(generated_presentation, save_path=str(file_path))
+            structure_to_ppt(generated_presentation, save_path=str(file_path), theme=presentation.theme)
             
             # Also convert PPTX to PDF for preview
             pdf_path = PDF_DIR / f"{db_presentation.id}.pdf"

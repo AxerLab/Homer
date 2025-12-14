@@ -12,11 +12,12 @@ export const PresentationCreationForm: React.FC<
 > = ({ onPresentationCreated }) => {
   const [topic, setTopic] = useState('');
   const [fileType, setFileType] = useState<'pptx' | 'pdf'>('pptx');
+  const [theme, setTheme] = useState<string>('default');
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () => presentationApi.createPresentation(topic, fileType),
+    mutationFn: () => presentationApi.createPresentation(topic, fileType, theme),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['presentations'] });
       if (onPresentationCreated) {
@@ -79,6 +80,27 @@ export const PresentationCreationForm: React.FC<
             PDF
           </label>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="theme" className="block text-sm font-medium mb-1">
+          Theme
+        </label>
+        <select
+          id="theme"
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+          className="w-full p-2 border border-border rounded dark:bg-background-elevated"
+          disabled={mutation.isPending || fileType === 'pdf'}
+        >
+          <option value="default">Default</option>
+          <option value="psychedelic_vibrant">Psychedelic Vibrant</option>
+        </select>
+        {fileType === 'pdf' && (
+          <p className="text-xs text-gray-500 mt-1">
+            Theme selection is only available for PowerPoint format
+          </p>
+        )}
       </div>
 
       {mutation.isError && (

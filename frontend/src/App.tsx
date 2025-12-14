@@ -50,15 +50,15 @@ function App() {
     }
   }
 
-  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX') => {
-    console.log('Generating presentation:', { prompt, format })
+  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX', theme?: string) => {
+    console.log('Generating presentation:', { prompt, format, theme })
     setIsGenerating(true)
 
     try {
       // Map TeX to pdf for API
       const fileType = format === 'TeX' ? 'pdf' : format.toLowerCase() as 'pptx' | 'pdf'
 
-      const presentation_id = await presentationApi.createPresentation(prompt, fileType)
+      const presentation_id = await presentationApi.createPresentation(prompt, fileType, theme)
       const presentation = await presentationApi.getPresentation(presentation_id.id)
 
       // Add to presentations list

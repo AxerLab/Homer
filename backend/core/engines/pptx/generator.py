@@ -8,11 +8,23 @@ from ....config.logs import logger
 import requests
 from io import BytesIO
 from urllib.parse import urlparse
+from pathlib import Path
 
 
 class PPTXGenerator:
-    def __init__(self):
-        self.prs = Presentation()
+    def __init__(self, template_path: str | None = None):
+        """Initialize PPTX generator with optional template.
+        
+        Args:
+            template_path: Path to .pptx template file. If None, uses default blank template.
+        """
+        if template_path and Path(template_path).exists():
+            self.prs = Presentation(template_path)
+            logger.info(f"Using template: {template_path}")
+        else:
+            self.prs = Presentation()
+            if template_path:
+                logger.warning(f"Template not found: {template_path}, using default")
         self.layouts_indices = {
             "title": 0,
             "title_and_content": 1,
@@ -42,7 +54,7 @@ class PPTXGenerator:
                         p = text_frame.add_paragraph()
                         p.text = point
                         p.level = 1
-            elif isinstance(text, BulletList):
+            elif isinstance(text, list):  # BulletList is a list type
                 for point in text:
                     p = text_frame.add_paragraph()
                     p.text = point

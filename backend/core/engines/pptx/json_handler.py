@@ -3,10 +3,20 @@ from ...models.presentation.presentation import SlidePresentation
 from .generator import PPTXGenerator
 from ...tools.tavily_image_search import tavily_image_search
 from ....config.logs import logger
+from ....templates.template_mapping import get_template_path
 import asyncio
 
-def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None):
-    generator = PPTXGenerator()
+def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None, theme: Optional[str] = None):
+    """Convert presentation structure to PPTX file.
+    
+    Args:
+        pres: SlidePresentation object containing slide data
+        save_path: Path where to save the PPTX file
+        theme: Theme name to use for styling (e.g., 'default', 'psychedelic_vibrant')
+    """
+    # Get template path from theme name
+    template_path = get_template_path(theme) if theme else None
+    generator = PPTXGenerator(template_path=template_path)
     for slide in pres.slides:
         if slide.layout == "title":
             if slide.content is None or slide.content.text is None:
