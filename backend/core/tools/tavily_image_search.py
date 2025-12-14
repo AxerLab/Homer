@@ -8,6 +8,7 @@ import os
 from typing import Literal
 from tavily import TavilyClient
 from dotenv import load_dotenv
+from ...config.logs import logger
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ async def tavily_image_search(
     query: str,
     count: int = 5,
     search_depth: Literal["basic", "advanced"] = "basic",
+    return_first_url: bool = False,
 ) -> str:
     """
     Search for images on the web using Tavily Search API.
@@ -29,15 +31,18 @@ async def tavily_image_search(
         query: The search query for finding images. Be specific and descriptive.
         count: Number of image results to return (1-20, default 5).
         search_depth: Search depth - "basic" (faster) or "advanced" (more thorough).
+        return_first_url: If True, returns only the first image URL as a string. If False, returns formatted results.
     
     Returns:
-        A formatted string containing image search results with URLs and metadata.
+        A formatted string containing image search results with URLs and metadata,
+        or just the first image URL if return_first_url is True.
     """
     if not TAVILY_API_KEY:
         return "Error: TAVILY_API_KEY environment variable is not set. Please configure your Tavily Search API key."
     
     # Clamp count to reasonable limits
     count = max(1, min(count, 20))
+    logger.debug(f"Performing Tavily image search for query: '{query}'")
     
     try:
         # Initialize Tavily client
@@ -58,6 +63,10 @@ async def tavily_image_search(
         
         if not images and not results:
             return f"No images found for query: '{query}'"
+        
+        # If return_first_url is True, return just the first image URL
+        if return_first_url and images:
+            return images[0]
         
         # Format results for the agent
         formatted_results = []

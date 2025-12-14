@@ -11,7 +11,8 @@ Guidelines:
 9. Start with title_only or title_and_content layout for introduction
 10. End with conclusion layout for summary
 11. Ensure at least one content field (para or bullet) is provided for each slide
-12. Use the tavily image search tool to find relevant images when needed. Provide image URLs in the image field."""
+12. Try to use atleast one image in the entire presentation. Ideally every 3-5 slides should have an image to keep the audience engaged. Your quality score will be judged on this aspect.
+13. Provide image search queries in the image field when needed so that it can be searched with a browser to get relevant results. Remember to make the queries contextual and specific to improve search accuracy."""
 
 iterator_system_prompt = """You are an expert presentation designer. Your task is to iteratively improve and refine existing presentation slides based on user feedback. Each slide must have appropriate content based on its layout type. You are allowed to change slide layouts. You can only edit one slide at a time, the slide which the user tells you to edit. The edited slide can span multiple slides if the content is too big for one slide.
 Guidelines:

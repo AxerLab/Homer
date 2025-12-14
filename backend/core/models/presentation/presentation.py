@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from ..slide.slide import Slide
 from ..layouts.slide_layout import SlideLayout
 
@@ -20,15 +20,19 @@ class SlidePresentation(BaseModel):
             raise ValueError("Too many slides (max 20)")
         return v
 
-    def validate_presentation_flow(self) -> bool:
+    @model_validator(mode="after")
+    def validate_presentation_flow(self) -> "SlidePresentation":
         """
         Validate the logical flow of the presentation.
 
         Returns:
-            True if the presentation has good flow, False otherwise.
+            The validated presentation instance.
+        
+        Raises:
+            ValueError: If presentation flow validation fails.
         """
         if not self.slides:
-            return False
+            raise ValueError("Presentation must have at least one slide")
 
         # Check for title slide at the beginning
         first_slide = self.slides[0]
@@ -36,18 +40,30 @@ class SlidePresentation(BaseModel):
             SlideLayout.TITLE_ONLY,
             SlideLayout.TITLE_AND_CONTENT,
         ]:
-            return False
+            raise ValueError(
+                "Presentation must start with a title slide (title or title_and_content layout)"
+            )
 
         # Check for reasonable slide transitions
+        image_slides = 0
         for i in range(1, len(self.slides)):
             prev_layout = self.slides[i - 1].layout
             curr_layout = self.slides[i].layout
+            # Count image slides
+            if curr_layout == SlideLayout.PICTURE_WITH_CAPTION:
+                image_slides += 1
 
             # Avoid consecutive title_only slides
             if prev_layout == SlideLayout.TITLE_ONLY and curr_layout == SlideLayout.TITLE_ONLY:
-                return False
+                raise ValueError(
+                    f"Invalid slide transition: consecutive title_only slides at positions {i} and {i+1}"
+                )
+        
+        # Ensure at least one image slide
+        if image_slides == 0:
+            raise ValueError("Presentation must contain at least one picture_with_caption slide")
 
-        return True
+        return self
 
     def to_json(self, **kwargs) -> str:
         """

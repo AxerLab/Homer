@@ -1,5 +1,4 @@
 from typing import Optional
-import re
 from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
@@ -18,7 +17,7 @@ class Slide(BaseModel):
         ..., description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
     )
     image: Optional[str] = Field(
-        None, description="Optional image URL. Use only on picture_with_caption layout", max_length=500
+        None, description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.", max_length=500
     )
 
     # conflicts with blank layout
@@ -142,13 +141,13 @@ class Slide(BaseModel):
         if self.layout == SlideLayout.PICTURE_WITH_CAPTION:
             if not self.image:
                 raise ValueError(
-                    f"Slides with layout '{self.layout}' must have an 'image' URL"
+                    f"Slides with layout '{self.layout}' must have an 'image' search query"
                 )
             if not self.content.text:
                 raise ValueError(
                     f"Slides with layout '{self.layout}' must have 'text' content as caption"
                 )
-            if not self.content.text.para and not self.content.text.bullet:
+            if not self.content.text.para and self.content.text.bullet:
                 raise ValueError(
                     f"Slides with layout '{self.layout}' must have 'text' content "
                     "as caption and not bullet points"
@@ -158,23 +157,11 @@ class Slide(BaseModel):
     @field_validator("image")
     @classmethod
     def validate_image_link(cls, v: str) -> Optional[str]:
-        """Validate image URL format."""
+        """Validate image search query."""
         if v is not None:
             if not isinstance(v, str):
-                raise ValueError("Image URL must be a string")
+                raise ValueError("Image search query must be a string")
             if len(v.strip()) == 0:
                 return None  # Convert empty string to None
-            v = v.strip()
-            
-            url_pattern = re.compile(
-                r'^https?://'  # http:// or https://
-                r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
-                r'localhost|'  # localhost...
-                r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-                r'(?::\d+)?'  # optional port
-                r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-            
-            if not url_pattern.match(v):
-                raise ValueError("Invalid URL format. Must be a valid HTTP or HTTPS URL")
-            return v
+            return v.strip()
         return v

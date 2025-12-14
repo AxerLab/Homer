@@ -1,6 +1,9 @@
 from typing import Optional
 from ...models.presentation.presentation import SlidePresentation
 from .generator import PPTXGenerator
+from ...tools.tavily_image_search import tavily_image_search
+from ....config.logs import logger
+import asyncio
 
 def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None):
     generator = PPTXGenerator()
@@ -77,15 +80,48 @@ def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None):
 
         elif slide.layout == "picture_with_caption":
             if slide.image is None:
-                raise ValueError("Image must be provided for picture_with_caption layout")
+                raise ValueError("Image search query must be provided for picture_with_caption layout")
             if slide.content is None or slide.content.text is None:
                 raise ValueError("Caption content must be provided for picture_with_caption layout")
             if slide.title is None:
                 raise ValueError("Title must be provided for picture_with_caption layout")
             if slide.content.text.para is None:
                 raise ValueError("Caption text must be provided for picture_with_caption layout")
+            
+            # Perform image search using Tavily and get multiple image URLs as fallback
+            logger.debug(f"Fetching images for query: '{slide.image}'")
+            try:
+                # Get top 3 images as fallback options
+                image_urls_response = asyncio.run(tavily_image_search(
+                    query=slide.image,
+                    count=3,
+                    search_depth="basic",
+                    return_first_url=False
+                ))
+                
+                # Parse the response to extract image URLs
+                image_urls = []
+                if "**Image URLs:**" in image_urls_response:
+                    lines = image_urls_response.split("\n")
+                    for line in lines:
+                        if line.strip() and line[0].isdigit() and ". http" in line:
+                            # Extract URL from lines like "1. https://..."
+                            url = line.split(". ", 1)[1].strip()
+                            image_urls.append(url)
+                
+                if not image_urls:
+                    raise ValueError(f"No valid image URLs found for query '{slide.image}'")
+                
+                logger.debug(f"Found {len(image_urls)} image URLs, attempting to use them in order")
+                
+            except Exception as e:
+                logger.error(f"Failed to fetch images for query '{slide.image}': {str(e)}")
+                raise ValueError(f"Failed to fetch images for query '{slide.image}': {str(e)}")
+            
+            logger.debug(f"Adding picture_with_caption slide with title: {slide.title}")
+            # Pass all image URLs as fallback options
             generator.picture_with_caption_slide(
-                slide.title, slide.image, slide.content.text.para
+                slide.title, image_urls, slide.content.text.para
             )
         else:
             raise ValueError(f"Unsupported slide layout: {slide.layout}")

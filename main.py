@@ -14,6 +14,7 @@ from backend.core.models.presentation.presentation import SlidePresentation as A
 from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
+from backend.config.logs import logger
 import logfire
 
 # Create tables
@@ -66,6 +67,7 @@ def create_presentation(
 
         # Convert to JSON string for storage
         json_string = generated_presentation.model_dump_json()
+        logger.debug(f"Generated presentation JSON: {json_string}")
 
         # Create database entry
         db_presentation = crud.create_presentation(

@@ -12,7 +12,7 @@ from ..tools import tavily_image_search_tool
 
 agent = Agent(
     model=model,
-    tools=[duckduckgo_search_tool(max_results=3), tavily_image_search_tool(max_results=5)], 
+    tools=[duckduckgo_search_tool(max_results=3)], 
     output_type=SlidePresentation, 
     system_prompt=generator_system_prompt, 
     retries=3
