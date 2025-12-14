@@ -3,7 +3,7 @@ from pptx.shapes.base import BaseShape
 from pptx.text.text import TextFrame
 from pptx.shapes.placeholder import PicturePlaceholder
 from ...models.content.textcontent.textcontent import TextContent
-from ...models.content.textcontent.comparison import Comparison
+from ...models.content.textcontent.comparison import Comparison, BulletList
 from ....config.logs import logger
 import requests
 from io import BytesIO
@@ -26,7 +26,7 @@ class PPTXGenerator:
         }
 
     def _set_placeholder_text(
-        self, placeholder: BaseShape | None, text: str | TextContent | None
+        self, placeholder: BaseShape | None, text: str | TextContent | BulletList | None # type: ignore
     ) -> None:
         """Safely set text on a placeholder."""
         if placeholder is not None and placeholder.has_text_frame:
@@ -42,6 +42,13 @@ class PPTXGenerator:
                         p = text_frame.add_paragraph()
                         p.text = point
                         p.level = 1
+            elif isinstance(text, BulletList):
+                for point in text:
+                    p = text_frame.add_paragraph()
+                    p.text = point
+                    p.level = 1
+            else:
+                logger.warning(f"Cannot set text: placeholder={placeholder}, text={text}")
 
     def _set_placeholder_picture(
         self, placeholder: BaseShape | None, image_path: str | list[str] | None

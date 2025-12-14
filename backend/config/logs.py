@@ -1,10 +1,22 @@
 import logging
 import sys
 import colorlog
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Create the logger
 logger = logging.getLogger("my-app")
-logger.setLevel(logging.DEBUG)
+log_level = os.getenv("LOGGING", "INFO").upper()
+if log_level == "DEBUG":
+    logger.setLevel(logging.DEBUG)
+elif log_level == "INFO":
+    logger.setLevel(logging.INFO)
+elif log_level == "WARNING":
+    logger.setLevel(logging.WARNING)
+elif log_level == "ERROR":
+    logger.setLevel(logging.ERROR)
 
 # ===== Terminal Pretty (Colored) Logs =====
 color_formatter = colorlog.ColoredFormatter(

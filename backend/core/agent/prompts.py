@@ -6,7 +6,7 @@ Guidelines:
 4. Make content concise and engaging
 5. Include image suggestions when relevant (especially for image_and_text layout)
 6. Ensure good flow between slides
-7. Use bullet points for key information (2-5 points per slide)
+7. Use bullet points for key information (2-5 points per slide). More then 5 points are not allowed and will fail validation.
 8. Keep paragraphs concise (1-3 sentences, max 300 words)
 9. Start with title_only or title_and_content layout for introduction
 10. End with conclusion layout for summary

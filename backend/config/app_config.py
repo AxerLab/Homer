@@ -9,5 +9,6 @@ if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set.")
 
 MODEL = "moonshotai/kimi-k2-instruct-0905"
+CORRECTION_MODEL = "openai/gpt-oss-120b"
 
 model_provider = GroqProvider(api_key=GROQ_API_KEY, base_url="https://api.groq.com/")
