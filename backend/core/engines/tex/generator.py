@@ -1,15 +1,14 @@
 from pathlib import Path
 from pylatex import Document, NoEscape
-from ...generator.generator import generate_presentation
 from ...models.layouts.slide_layout import SlideLayout
 from ...models.content.textcontent.textcontent import TextContent
+from ...models.presentation.presentation import SlidePresentation
 from typing import Union
-import subprocess
 import requests
-from io import BytesIO
 from urllib.parse import urlparse
 import tempfile
-import os
+from ...tools.tavily_image_search import tavily_image_search
+import asyncio
 
 def escape_latex(text: str) -> str:
     if text is None:
@@ -33,7 +32,7 @@ def content_to_latex(content: Union[TextContent, list]) -> str:
             latex += "\\end{itemize}\n"
     return latex
 
-def handle_image_for_latex(image_path: str, output_dir: Path) -> str:
+def handle_image_for_latex(image_query: str, output_dir: Path) -> str | None:
     """
     Handle image path for LaTeX inclusion. Downloads URLs to temporary files.
     
@@ -44,11 +43,29 @@ def handle_image_for_latex(image_path: str, output_dir: Path) -> str:
     Returns:
         Local file path suitable for LaTeX inclusion
     """
-    if not image_path:
+    if not image_query:
         return ""
     
-    parsed = urlparse(image_path)
-    if parsed.scheme in ('http', 'https'):
+    image_urls_response = asyncio.run(tavily_image_search(
+        query=image_query,
+        count=3,
+        search_depth="basic",
+        return_first_url=False
+    ))
+    image_urls = []
+    if "**Image URLs:**" in image_urls_response:
+        lines = image_urls_response.split("\n")
+        for line in lines:
+            if line.strip() and line[0].isdigit() and ". http" in line:
+                # Extract URL from lines like "1. https://..."
+                url = line.split(". ", 1)[1].strip()
+                image_urls.append(url)
+    
+    if not image_urls:
+        raise ValueError(f"No valid image URLs found for query '{image_query}'")
+    
+    for image_path in image_urls:
+        parsed = urlparse(image_path)
         try:
             # Download the image from URL
             response = requests.get(image_path, timeout=10)
@@ -77,19 +94,20 @@ def handle_image_for_latex(image_path: str, output_dir: Path) -> str:
             temp_file.close()
             
             return temp_file.name
-        except (requests.RequestException, OSError) as e:
-            print(f"Error downloading image from {image_path}: {e}")
-            return ""
-    else:
-        # Local file path - verify it exists
-        if Path(image_path).exists():
-            return image_path
-        else:
-            print(f"Warning: Image file not found: {image_path}")
-            return ""
+        except Exception as e:
+            print(f"Error downloading image from {image_path}: {e}, trying next URL...")
 
-def generate_tex_and_pdf(original_prompt: str, user_prompt: str, tex_path: str = "test.tex", output_filename: str = None):
-    presentation = generate_presentation(original_prompt=original_prompt, user_prompt=user_prompt)
+def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.tex", output_filename: str | None = None):
+    """Generate TEX file and PDF from a presentation object.
+    
+    Args:
+        presentation: SlidePresentation object containing slides
+        tex_path: Path for the TEX file (default: "test.tex")
+        output_filename: Optional output filename/path for the PDF
+    
+    Returns:
+        Path to the generated PDF file
+    """
 
     # Determine the base name for files from tex_path or use output_filename if provided
     if output_filename:

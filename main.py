@@ -90,8 +90,7 @@ def create_presentation(
             # Generate PDF with UUID name in the PDF directory
             pdf_output_path = str(PDF_DIR / db_presentation.id)
             generate_tex_and_pdf(
-                presentation.main_topic,
-                presentation.main_topic,
+                generated_presentation,
                 tex_path=f"{pdf_output_path}.tex",
                 output_filename=pdf_output_path
             )
