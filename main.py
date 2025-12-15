@@ -43,8 +43,8 @@ app.add_middleware(
 if OUTPUT_DIR.exists():
     app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
 
-logfire.configure()
-logfire.instrument_pydantic_ai()
+# logfire.configure()
+# logfire.instrument_pydantic_ai()
 
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 def create_presentation(
