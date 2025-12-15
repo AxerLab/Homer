@@ -138,5 +138,6 @@ def structure_to_ppt(pres: SlidePresentation, save_path: Optional[str] = None, t
         
     if save_path:
         generator.save(save_path)
+        logger.debug(f"PPTX saved to {save_path}")
     return generator.prs
 

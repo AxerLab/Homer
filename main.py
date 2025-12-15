@@ -98,6 +98,7 @@ def create_presentation(
         return schemas.PresentationCreateResponse(id=str(db_presentation.id))
 
     except Exception as e:
+        logger.error(f"Error creating presentation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating presentation: {str(e)}")
 
 @app.get("/api/v1/presentations/")
