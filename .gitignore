@@ -223,3 +223,4 @@ CLAUDE.md
 .github/instructions
 generated_files/
 docs/
+!backend/templates/*.pptx
