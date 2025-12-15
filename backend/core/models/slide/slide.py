@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
 
@@ -16,9 +16,9 @@ class Slide(BaseModel):
     layout: SlideLayout = Field(
         ..., description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
     )
-    # image: Optional[str] = Field(
-    #     None, description="Optional image description or URL", max_length=500
-    # )
+    image: Optional[str] = Field(
+        None, description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.", max_length=500
+    )
 
     # conflicts with blank layout
     # @field_validator("title")
@@ -137,4 +137,31 @@ class Slide(BaseModel):
                     f"Slides with layout '{self.layout}' must have both 'text', "
                     "'text2' content"
                 )
+        
+        if self.layout == SlideLayout.PICTURE_WITH_CAPTION:
+            if not self.image:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have an 'image' search query"
+                )
+            if not self.content.text:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content as caption"
+                )
+            if not self.content.text.para and self.content.text.bullet:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content "
+                    "as caption and not bullet points"
+                )
         return self
+
+    @field_validator("image")
+    @classmethod
+    def validate_image_link(cls, v: str) -> Optional[str]:
+        """Validate image search query."""
+        if v is not None:
+            if not isinstance(v, str):
+                raise ValueError("Image search query must be a string")
+            if len(v.strip()) == 0:
+                return None  # Convert empty string to None
+            return v.strip()
+        return v

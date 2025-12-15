@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 
 
 class PresentationCreate(BaseModel):
     """POST request - create presentation and generate file"""
     main_topic: str = Field(..., min_length=1, description="Main topic/prompt for presentation")
     file_type: Literal['pptx', 'pdf'] = Field(..., description="Type of file to generate")
+    theme: Optional[str] = Field(None, description="Theme name for presentation (e.g., 'default', 'psychedelic_vibrant')")
 
 class PresentationCreateResponse(BaseModel):
     """Response with UUID after creation"""

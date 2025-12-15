@@ -14,6 +14,8 @@ from backend.core.models.presentation.presentation import SlidePresentation as A
 from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
+from backend.config.logs import logger
+import logfire
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -41,6 +43,9 @@ app.add_middleware(
 if OUTPUT_DIR.exists():
     app.mount("/generated_files", StaticFiles(directory=str(OUTPUT_DIR)), name="generated_files")
 
+logfire.configure()
+logfire.instrument_pydantic_ai()
+
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 def create_presentation(
     presentation: schemas.PresentationCreate,
@@ -62,6 +67,7 @@ def create_presentation(
 
         # Convert to JSON string for storage
         json_string = generated_presentation.model_dump_json()
+        logger.debug(f"Generated presentation JSON: {json_string}")
 
         # Create database entry
         db_presentation = crud.create_presentation(
@@ -74,7 +80,7 @@ def create_presentation(
         # Generate file with UUID as name
         if presentation.file_type == "pptx":
             file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
-            structure_to_ppt(generated_presentation, save_path=str(file_path))
+            structure_to_ppt(generated_presentation, save_path=str(file_path), theme=presentation.theme)
             
             # Also convert PPTX to PDF for preview
             pdf_path = PDF_DIR / f"{db_presentation.id}.pdf"
@@ -84,8 +90,7 @@ def create_presentation(
             # Generate PDF with UUID name in the PDF directory
             pdf_output_path = str(PDF_DIR / db_presentation.id)
             generate_tex_and_pdf(
-                presentation.main_topic,
-                presentation.main_topic,
+                generated_presentation,
                 tex_path=f"{pdf_output_path}.tex",
                 output_filename=pdf_output_path
             )

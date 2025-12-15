@@ -33,6 +33,10 @@ def convert_pptx_to_pdf(pptx_path: str, pdf_path: str) -> bool:
             logger.error(f"PPTX file not found: {pptx_path}")
             return False
         
+        if not PDF_CONVERTER_URL:
+            logger.error("PDF_CONVERTER_URL is not set")
+            return False
+        
         logger.info(f"Converting {pptx_path} to PDF using wteja/pdf-converter")
         
         # Construct the conversion URL
@@ -84,6 +88,9 @@ def is_converter_available() -> bool:
         bool: True if service is available, False otherwise
     """
     try:
+        if not PDF_CONVERTER_URL:
+            logger.warning("PDF_CONVERTER_URL is not set")
+            return False
         # Try a simple health check at the root
         requests.get(PDF_CONVERTER_URL, timeout=5)
         # Any response means the service is up

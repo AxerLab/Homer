@@ -12,6 +12,7 @@ export type Presentation = {
 export type CreatePresentationRequest = {
   main_topic: string;
   file_type: 'pptx' | 'pdf';
+  theme?: string;  // Optional theme selection
 }
 
 export type CreatePresentationResponse = {

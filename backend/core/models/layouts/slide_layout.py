@@ -17,9 +17,9 @@ class SlideLayout(str, Enum):
     TITLE_ONLY = "title_only"  # Clean slide with only a centered title
     BLANK = "blank"  # Empty slide with no predefined content areas
     CONTENT_WITH_CAPTION = "content_with_caption"  # Content area with accompanying caption text
-    # PICTURE_WITH_CAPTION = (
-    #     "picture_with_caption"  # Image-focused layout with descriptive caption
-    # )
+    PICTURE_WITH_CAPTION = (
+        "picture_with_caption"  # Image-focused layout with descriptive caption
+    )
 
     @classmethod
     def get_descriptions(cls) -> dict[str, str]:
@@ -33,7 +33,7 @@ class SlideLayout(str, Enum):
             cls.TITLE_ONLY.value: "Clean slide with only a centered title. Must not have any other content.",
             cls.BLANK.value: "Empty slide with no predefined content areas. Cannot have title, text, bullet or any form of content.",
             cls.CONTENT_WITH_CAPTION.value: "Content area with accompanying caption text. Must have both text and text2 content.",
-            # cls.PICTURE_WITH_CAPTION.value: "Image-focused layout with descriptive caption",
+            cls.PICTURE_WITH_CAPTION.value: "Image-focused layout with descriptive caption",
         }
 
     @classmethod

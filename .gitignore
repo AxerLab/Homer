@@ -221,3 +221,5 @@ frontend_backup/
 CLAUDE.md
 !Dockerfile.tex
 .github/instructions
+generated_files/
+docs/

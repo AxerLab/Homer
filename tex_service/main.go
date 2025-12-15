@@ -30,35 +30,70 @@ func generatePDF(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// 2. Parse the uploaded file
-	// Limit upload size to 10MB
-	r.ParseMultipartForm(10 << 20)
-
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "Error retrieving file", http.StatusBadRequest)
+	// 2. Parse uploaded files (TEX file + optional images)
+	// Limit upload size to 50MB to accommodate images
+	if err := r.ParseMultipartForm(50 << 20); err != nil {
+		log.Printf("Error parsing multipart form: %v", err)
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
 
-	// 3. Save the .tex file
-	texPath := filepath.Join(tmpDir, "input.tex")
-	dst, err := os.Create(texPath)
-	if err != nil {
-		log.Printf("Error creating tex file: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// Get all uploaded files
+	files := r.MultipartForm.File["file"]
+	if len(files) == 0 {
+		http.Error(w, "No files uploaded", http.StatusBadRequest)
 		return
 	}
-	
-	if _, err := io.Copy(dst, file); err != nil {
+
+	var texPath string
+	var texFilename string
+
+	// 3. Save all uploaded files to the temp directory
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			log.Printf("Error opening file %s: %v", fileHeader.Filename, err)
+			http.Error(w, "Error processing files", http.StatusInternalServerError)
+			return
+		}
+
+		// Save file with its original filename
+		destPath := filepath.Join(tmpDir, fileHeader.Filename)
+
+		// If this is the .tex file, remember its path
+		if filepath.Ext(fileHeader.Filename) == ".tex" {
+			texPath = destPath
+			texFilename = fileHeader.Filename
+		}
+
+		dst, err := os.Create(destPath)
+		if err != nil {
+			file.Close()
+			log.Printf("Error creating file %s: %v", fileHeader.Filename, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if _, err := io.Copy(dst, file); err != nil {
+			file.Close()
+			dst.Close()
+			log.Printf("Error saving file %s: %v", fileHeader.Filename, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		file.Close()
 		dst.Close()
-		log.Printf("Error saving tex file: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+
+		log.Printf("Saved file: %s to %s", fileHeader.Filename, destPath)
+	}
+
+	// Verify we have a .tex file
+	if texPath == "" {
+		http.Error(w, "No .tex file found in upload", http.StatusBadRequest)
 		return
 	}
-	dst.Close()
 
-	log.Printf("Processing file: %s in %s", header.Filename, tmpDir)
+	log.Printf("Processing TEX file: %s in %s with %d total files", texFilename, tmpDir, len(files))
 
 	// 4. Run pdflatex
 	// -interaction=nonstopmode: Don't stop for errors
@@ -73,8 +108,9 @@ func generatePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. Read the generated PDF
-	pdfPath := filepath.Join(tmpDir, "input.pdf")
+	// 5. Read the generated PDF (same basename as TEX file)
+	pdfBasename := texFilename[:len(texFilename)-4] + ".pdf"
+	pdfPath := filepath.Join(tmpDir, pdfBasename)
 	pdfBytes, err := os.ReadFile(pdfPath)
 	if err != nil {
 		log.Printf("Error reading generated PDF: %v", err)
@@ -84,11 +120,11 @@ func generatePDF(w http.ResponseWriter, r *http.Request) {
 
 	// 6. Return the PDF
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.pdf\"", "presentation"))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", pdfBasename))
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
 	w.Write(pdfBytes)
 	
-	log.Printf("Successfully generated PDF for %s", header.Filename)
+	log.Printf("Successfully generated PDF for %s", texFilename)
 }
 
 func main() {
