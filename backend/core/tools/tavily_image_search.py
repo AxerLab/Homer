@@ -36,9 +36,13 @@ async def tavily_image_search(
     Returns:
         A formatted string containing image search results with URLs and metadata,
         or just the first image URL if return_first_url is True.
+    
+    Raises:
+        ValueError: If TAVILY_API_KEY is not set or if no images are found.
+        Exception: If the search fails for any other reason.
     """
     if not TAVILY_API_KEY:
-        return "Error: TAVILY_API_KEY environment variable is not set. Please configure your Tavily Search API key."
+        raise ValueError("TAVILY_API_KEY environment variable is not set. Please configure your Tavily Search API key.")
     
     # Clamp count to reasonable limits
     count = max(1, min(count, 20))
@@ -62,7 +66,7 @@ async def tavily_image_search(
         results = response.get("results", [])
         
         if not images and not results:
-            return f"No images found for query: '{query}'"
+            raise ValueError(f"No images found for query: '{query}'")
         
         # If return_first_url is True, return just the first image URL
         if return_first_url and images:
@@ -94,8 +98,11 @@ async def tavily_image_search(
         
         return header + "\n" + "\n".join(formatted_results)
         
+    except ValueError:
+        # Re-raise ValueError for API key and no results errors
+        raise
     except Exception as e:
-        return f"Error searching for images: {str(e)}"
+        raise Exception(f"Error searching for images: {str(e)}") from e
 
 
 def tavily_image_search_tool(max_results: int = 5):
