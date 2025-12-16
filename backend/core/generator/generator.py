@@ -86,7 +86,11 @@ def generate_presentation(
                     error_dict = e.body.get('error', {})
                     if isinstance(error_dict, dict):
                         message = error_dict.get('message', '')
-                        if 'tool call validation failed' in message and 'final_result' in message:
+                        error_code = error_dict.get('code', '')
+                        # Check for tool use failures or validation errors
+                        if (error_code == 'tool_use_failed' or 
+                            ('tool call validation failed' in message and 'final_result' in message) or
+                            ('Failed to call a function' in message and 'final_result' in error_msg)):
                             is_schema_error = True
             
             # For UnexpectedModelBehavior, check if it contains validation errors
