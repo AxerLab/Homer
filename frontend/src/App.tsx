@@ -131,11 +131,13 @@ function App() {
     setIsModifying(true)
     try {
       await presentationApi.updateSlide(currentPresentation.id, slideNumber, prompt)
-      // Reload the page to ensure all content refreshes (PDF viewer, slide count, etc.)
-      window.location.reload()
+      // Refetch the updated presentation and update state to refresh the UI without a full page reload
+      const updatedPresentation = await presentationApi.getPresentation(currentPresentation.id)
+      setCurrentPresentation(updatedPresentation)
     } catch (error) {
       console.error('Failed to update slide:', error)
       alert('Failed to update slide. Please try again.')
+    } finally {
       setIsModifying(false)
     }
   }
