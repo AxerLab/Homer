@@ -81,14 +81,14 @@ docker-compose up -d
 ```
 
 ### start backend
-Create a seperate terminal
+Create a separate terminal
 ```
 uv sync
 source .venv/bin/activate
 uvicorn main:app
 ```
 ### start frontend
-Create a seperate terminal
+Create a separate terminal
 ```
 cd frontend/
 npm install
