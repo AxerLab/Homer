@@ -81,7 +81,7 @@ docker-compose up -d
 ```
 
 ### start backend
-Create a seperate terminal
+Create a separate terminal
 ```
 uv sync
 source .venv/bin/activate
