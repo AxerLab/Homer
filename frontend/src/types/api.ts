@@ -1,11 +1,19 @@
 // Simple types matching the actual backend API from OpenAPI spec
 
+// Slide data returned from backend
+export type SlideData = {
+  title: string;
+  content: string;
+  layout: string;
+}
+
 // Backend returns presentation metadata
 // In production, it should also return file URLs
 export type Presentation = {
   id: string;
   main_topic: string;
   file_type: 'pptx' | 'pdf';  // File type from backend
+  slides: SlideData[];  // Slide data from backend
 }
 
 // Request/Response types directly from backend spec

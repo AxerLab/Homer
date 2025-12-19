@@ -73,3 +73,24 @@ The UI follows a modern, sleek AI SaaS aesthetic with darker tones and high cont
 # Claude instructions
 start claude: `SHELL=/bin/bash claude`
 Note: API keys need to be given before this
+
+# How to run
+## Start docker services
+```
+docker-compose up -d
+```
+
+### start backend
+Create a separate terminal
+```
+uv sync
+source .venv/bin/activate
+uvicorn main:app
+```
+### start frontend
+Create a separate terminal
+```
+cd frontend/
+npm install
+npm run dev
+```

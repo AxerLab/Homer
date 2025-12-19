@@ -4,6 +4,7 @@ import { Header } from './components/layout/Header'
 import { SlideCanvas } from './components/presentation/SlideCanvas'
 import { SlideContentPanel } from './components/presentation/SlideContentPanel'
 import { GenerateButton } from './components/presentation/GenerateButton'
+import { LoadingOverlay } from './components/ui/LoadingOverlay'
 import { cn } from './lib/utils'
 import type { PastChat } from './types'
 import type { Presentation } from './types/api'
@@ -14,6 +15,7 @@ function App() {
   const [selectedChatId, setSelectedChatId] = useState<string>()
   const [currentSlide, setCurrentSlide] = useState(1)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isModifying, setIsModifying] = useState(false)
   const [, setPresentations] = useState<Presentation[]>([])
   const [currentPresentation, setCurrentPresentation] = useState<Presentation | null>(null)
   const [pastChats, setPastChats] = useState<PastChat[]>([])
@@ -126,13 +128,17 @@ function App() {
   const handleModifySlide = async (slideNumber: number, prompt: string) => {
     if (!currentPresentation) return
 
+    setIsModifying(true)
     try {
       await presentationApi.updateSlide(currentPresentation.id, slideNumber, prompt)
-      // Reload presentation
-      const updated = await presentationApi.getPresentation(currentPresentation.id)
-      setCurrentPresentation(updated)
+      // Refetch the updated presentation and update state to refresh the UI without a full page reload
+      const updatedPresentation = await presentationApi.getPresentation(currentPresentation.id)
+      setCurrentPresentation(updatedPresentation)
     } catch (error) {
       console.error('Failed to update slide:', error)
+      alert('Failed to update slide. Please try again.')
+    } finally {
+      setIsModifying(false)
     }
   }
 
@@ -169,11 +175,12 @@ function App() {
 
           {currentPresentation && (
             <SlideContentPanel
-              slide={undefined}
+              slides={currentPresentation.slides || []}
               currentSlideNumber={currentSlide}
-              totalSlides={10}
+              totalSlides={currentPresentation.slides?.length || 0}
               className="w-96"
               onModifySlide={handleModifySlide}
+              isModifying={isModifying}
             />
           )}
         </div>
@@ -182,6 +189,12 @@ function App() {
       <GenerateButton
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
+      />
+
+      {/* Loading overlay for generation */}
+      <LoadingOverlay
+        isVisible={isGenerating}
+        message="Generating your presentation..."
       />
     </div>
   )

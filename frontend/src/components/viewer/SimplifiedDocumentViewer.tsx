@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight, Download } from '@mui/icons-material';
 import type { Presentation } from '@/types/api';
@@ -30,9 +30,19 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   const [pageNumber, setPageNumber] = useState(currentPage);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Cache buster to force reload PDF after updates
+  const [cacheBuster, setCacheBuster] = useState(Date.now());
 
-  // Always get PDF URL for preview (we now generate PDF for both pptx and pdf types)
-  const pdfUrl = getFileUrl(presentation, 'pdf');
+  // Reset state and bust cache when presentation changes (e.g., after slide update)
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    setCacheBuster(Date.now());
+  }, [presentation.id, presentation.slides?.length]);
+
+  // Always get PDF URL for preview with cache buster
+  const basePdfUrl = getFileUrl(presentation, 'pdf');
+  const pdfUrl = basePdfUrl ? `${basePdfUrl}?t=${cacheBuster}` : null;
   // Get PPTX URL for download button (only if original type was pptx)
   const pptxUrl = fileType === 'pptx' ? getFileUrl(presentation, 'pptx') : null;
   // Get TeX URL for download button (only for LaTeX/PDF presentations, not PPTX)
@@ -104,7 +114,7 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
             </button>
           </>
         )}
-        
+
         {/* Download buttons */}
         <div className="flex gap-2 ml-4">
           {pptxUrl && (

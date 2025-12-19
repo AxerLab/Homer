@@ -81,5 +81,5 @@ def regenerate_slide(
 
     updated_slides = presentation.slides.copy()
     updated_slides[slide_index : slide_index + 1] = agent_result.output
-
-    return SlidePresentation(slides=updated_slides)
+    # Use model_construct to bypass strict validation when updating slides
+    return SlidePresentation.model_construct(slides=updated_slides)
