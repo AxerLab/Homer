@@ -74,7 +74,8 @@ def create_presentation(
             db=db,
             main_topic=presentation.main_topic,
             json_object=json_string,
-            file_type=presentation.file_type
+            file_type=presentation.file_type,
+            theme=presentation.theme
         )
 
         # Generate file with UUID as name
@@ -125,16 +126,61 @@ def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
     """
     Get presentation by UUID
-    Returns: UUID and main_topic from database
+    Returns: UUID, main_topic, file_type, and slides from database
     """
     db_presentation = crud.get_presentation(db, presentation_id=presentation_id)
     if db_presentation is None:
         raise HTTPException(status_code=404, detail="Presentation not found")
 
+    # Parse slide data from stored JSON
+    slides_response = []
+    if db_presentation.json_object:
+        try:
+            # Use json.loads instead of model_validate_json to avoid strict validation
+            # Some stored presentations may not pass validation (e.g., missing title slide)
+            presentation_dict = json.loads(str(db_presentation.json_object))
+            slides_list = presentation_dict.get("slides", [])
+            
+            for slide in slides_list:
+                # Flatten slide content for frontend display
+                content_text = ""
+                content = slide.get("content", {}) or {}
+                
+                # Handle text content
+                text = content.get("text", {}) or {}
+                if text.get("para"):
+                    content_text = text["para"]
+                elif text.get("bullet"):
+                    content_text = "\n".join(f"• {b}" for b in text["bullet"])
+                
+                # Handle text2 content
+                text2 = content.get("text2", {}) or {}
+                if text2.get("para"):
+                    content_text += "\n\n" + text2["para"]
+                elif text2.get("bullet"):
+                    content_text += "\n\n" + "\n".join(f"• {b}" for b in text2["bullet"])
+                
+                # Handle comparison content
+                comparison = content.get("comparison", {}) or {}
+                if comparison:
+                    left = comparison.get("left", "")
+                    right = comparison.get("right", "")
+                    if left or right:
+                        content_text = f"Left: {left}\nRight: {right}"
+                
+                slides_response.append(schemas.SlideResponse(
+                    title=slide.get("title", "") or "",
+                    content=content_text,
+                    layout=slide.get("layout", "unknown")
+                ))
+        except Exception as e:
+            logger.warning(f"Failed to parse presentation JSON: {e}")
+
     return schemas.PresentationGetResponse(
         id=str(db_presentation.id),
         main_topic=str(db_presentation.main_topic),
-        file_type=getattr(db_presentation, 'file_type', 'pdf')  # Use getattr for backward compatibility
+        file_type=getattr(db_presentation, 'file_type', 'pdf'),
+        slides=slides_response
     )
 
 @app.delete("/api/v1/presentations/{presentation_id}")
@@ -205,14 +251,28 @@ def update_slide(
         updated_json = updated_presentation.model_dump_json()
         crud.update_presentation_json(db, presentation_id, updated_json)
 
-        # Regenerate files with same UUID (optional - you might want this as a separate endpoint)
-        # Update PPTX if it exists
-        pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
-        if pptx_file.exists():
-            structure_to_ppt(updated_presentation, save_path=str(pptx_file))
-
-        # Note: PDF regeneration would require re-running the tex generator
-        # which might be expensive, so consider making it a separate endpoint
+        # Regenerate files based on file type
+        file_type = getattr(db_presentation, 'file_type', 'pdf')
+        
+        if file_type == 'pptx':
+            # Regenerate PPTX with original theme
+            pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
+            theme = getattr(db_presentation, 'theme', None)
+            structure_to_ppt(updated_presentation, save_path=str(pptx_file), theme=theme)
+            
+            # Convert PPTX to PDF for preview
+            pdf_file = PDF_DIR / f"{presentation_id}.pdf"
+            convert_pptx_to_pdf(str(pptx_file), str(pdf_file))
+            logger.info(f"Regenerated PPTX and PDF for presentation {presentation_id}")
+        else:
+            # Regenerate TeX and PDF
+            pdf_output_path = str(PDF_DIR / presentation_id)
+            generate_tex_and_pdf(
+                updated_presentation,
+                tex_path=f"{pdf_output_path}.tex",
+                output_filename=pdf_output_path
+            )
+            logger.info(f"Regenerated TeX and PDF for presentation {presentation_id}")
 
         return schemas.SlideUpdateResponse(id=presentation_id)
 
