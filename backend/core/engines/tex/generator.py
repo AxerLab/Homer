@@ -130,7 +130,9 @@ def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.
     title = presentation.slides[0].title if presentation.slides else "Presentation"
     doc.preamble.append(NoEscape(f'\\title{{{escape_latex(title)}}}'))
     
-    doc.append(NoEscape(r'\frame{\maketitle}'))
+    # Note: We intentionally do NOT add \frame{\maketitle} here.
+    # The first slide in the slides array is already a title slide and will be rendered
+    # by the loop below. Adding \maketitle would create a duplicate title page.
 
     for slide in presentation.slides:
         doc.append(NoEscape(f'\\begin{{frame}}{{{escape_latex(slide.title)}}}'))

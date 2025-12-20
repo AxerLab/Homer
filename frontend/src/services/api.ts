@@ -120,6 +120,7 @@ export const presentationApi = {
     slideNumber: number,
     slideContent: string
   ): Promise<Presentation> {
+    /// Update a specific slide in a presentation. SlideNumber is 1-based.
     console.log('Updating slide:', { presentationId, slideNumber });
 
     const response = await fetch(
