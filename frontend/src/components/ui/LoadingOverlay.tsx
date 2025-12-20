@@ -11,7 +11,7 @@ interface LoadingOverlayProps {
 
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     isVisible,
-    message = 'Loading...',
+    message = 'Generating...',
     className,
     variant = 'fullscreen'
 }) => {
@@ -22,82 +22,56 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.3 }}
                     className={cn(
                         variant === 'fullscreen'
                             ? 'fixed inset-0 z-50 flex items-center justify-center'
                             : 'absolute inset-0 z-10 flex items-center justify-center',
-                        'backdrop-blur-md bg-background/70',
+                        'bg-background/80 backdrop-blur-sm',
                         className
                     )}
                 >
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        transition={{ duration: 0.2, delay: 0.1 }}
-                        className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-elevated/80 border border-border shadow-2xl"
+                        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex flex-col items-center gap-6 p-8"
                     >
-                        {/* Animated spinner */}
-                        <div className="relative w-16 h-16">
-                            {/* Outer glowing ring */}
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-secondary opacity-30 blur-lg animate-pulse" />
-
-                            {/* Spinning ring */}
-                            <div className="absolute inset-0 rounded-full border-4 border-border" />
+                        {/* Minimalist Spinner */}
+                        <div className="relative w-12 h-12">
                             <motion.div
-                                className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary border-r-secondary"
+                                className="absolute inset-0 rounded-full border-[3px] border-primary/20"
+                            />
+                            <motion.div
+                                className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent"
                                 animate={{ rotate: 360 }}
                                 transition={{
                                     duration: 1,
                                     repeat: Infinity,
-                                    ease: 'linear'
-                                }}
-                            />
-
-                            {/* Inner pulsing dot */}
-                            <motion.div
-                                className="absolute inset-4 rounded-full bg-gradient-to-br from-primary to-secondary"
-                                animate={{
-                                    scale: [0.8, 1, 0.8],
-                                    opacity: [0.5, 1, 0.5]
-                                }}
-                                transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut'
+                                    ease: "linear"
                                 }}
                             />
                         </div>
 
                         {/* Message */}
-                        <motion.p
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-text font-medium text-center"
-                        >
-                            {message}
-                        </motion.p>
-
-                        {/* Animated dots */}
-                        <div className="flex gap-1">
-                            {[0, 1, 2].map((i) => (
-                                <motion.div
-                                    key={i}
-                                    className="w-2 h-2 rounded-full bg-primary"
-                                    animate={{
-                                        y: [0, -6, 0],
-                                        opacity: [0.4, 1, 0.4]
-                                    }}
-                                    transition={{
-                                        duration: 0.8,
-                                        repeat: Infinity,
-                                        delay: i * 0.15,
-                                        ease: 'easeInOut'
-                                    }}
-                                />
-                            ))}
+                        <div className="flex flex-col items-center gap-2">
+                            <motion.h3
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="text-lg font-medium text-text tracking-tight"
+                            >
+                                {message}
+                            </motion.h3>
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 0.5 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-sm text-text-muted font-light"
+                            >
+                                This may take a moment
+                            </motion.p>
                         </div>
                     </motion.div>
                 </motion.div>
