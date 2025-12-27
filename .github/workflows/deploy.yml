@@ -41,9 +41,3 @@ jobs:
         # Tag and push pptx-service
         docker tag pptai-pptx-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
-
-    - name: Deploy to Azure App Service
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: pptai
-        images: ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
