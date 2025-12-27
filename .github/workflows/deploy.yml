@@ -18,14 +18,32 @@ jobs:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build and push Docker image
+    - name: Build and push Docker images
       run: |
-        docker compose build
-        docker tag myapp:latest ${{ secrets.ACR_LOGIN_SERVER }}/myapp:latest
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/myapp:latest
+        # Build services individually (avoids dependency resolution issues)
+        docker compose build backend
+        docker compose build frontend
+        docker compose build tex-service
+        docker compose build pptx-service
+
+        # Tag and push backend
+        docker tag pptai-backend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
+
+        # Tag and push frontend
+        docker tag pptai-frontend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-frontend:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-frontend:latest
+
+        # Tag and push tex-service
+        docker tag pptai-tex-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-tex-service:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-tex-service:latest
+
+        # Tag and push pptx-service
+        docker tag pptai-pptx-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: myapp
-        images: ${{ secrets.ACR_LOGIN_SERVER }}/myapp:latest
+        app-name: pptai
+        images: ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest

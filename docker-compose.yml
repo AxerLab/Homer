@@ -1,4 +1,31 @@
 services:
+  backend:
+    image: pptai-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8000:8000'
+    env_file:
+      - path: .env
+        required: false  # Optional for CI builds
+    depends_on:
+      - db
+      - tex-service
+      - pptx-service
+    restart: unless-stopped
+
+  frontend:
+    image: pptai-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   db:
     image: postgres:15-alpine
     restart: always
@@ -12,6 +39,7 @@ services:
       - postgres_data:/var/lib/postgresql/data/
 
   tex-service:
+    image: pptai-tex-service:latest
     build:
       context: ./tex_service
       dockerfile: Dockerfile
@@ -20,6 +48,7 @@ services:
     restart: unless-stopped
 
   pptx-service:
+    image: pptai-pptx-service:latest
     build:
       context: ./pptx_service
       dockerfile: Dockerfile
