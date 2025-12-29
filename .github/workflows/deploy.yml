@@ -5,7 +5,7 @@ on:
     branches: [ main ]  # Deploy on every push to main
 
 env:
-  RESOURCE_GROUP: pptai-rg  # Change to your resource group name
+  RESOURCE_GROUP: pptai  # Resource group name
 
 jobs:
   build-and-deploy:
