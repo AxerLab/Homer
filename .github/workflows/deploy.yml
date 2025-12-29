@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]  # Deploy on every push to main
 
+env:
+  RESOURCE_GROUP: pptai-rg  # Change to your resource group name
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -41,3 +44,31 @@ jobs:
         # Tag and push pptx-service
         docker tag pptai-pptx-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Container Apps
+      run: |
+        # Update each container app with the new image
+        az containerapp update \
+          --name pptai-backend \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
+
+        az containerapp update \
+          --name pptai-frontend \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-frontend:latest
+
+        az containerapp update \
+          --name pptai-tex-service \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-tex-service:latest
+
+        az containerapp update \
+          --name pptai-pptx-service \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
