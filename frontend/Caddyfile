@@ -3,31 +3,13 @@
   encode gzip
 
   handle /api/* {
-    reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
-      header_up Host {upstream_hostport}
-    }
+    reverse_proxy {$BACKEND_URL}
   }
   handle /health {
-    reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
-      header_up Host {upstream_hostport}
-    }
+    reverse_proxy {$BACKEND_URL}
   }
   handle /generated_files/* {
-    reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
-      header_up Host {upstream_hostport}
-    }
+    reverse_proxy {$BACKEND_URL}
   }
 
   # Catchall SPA fallback for TanStack Router
