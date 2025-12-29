@@ -29,7 +29,5 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Expose ports
 EXPOSE 80
 
-ARG BACKEND_URL
-
 # Start Caddy
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
