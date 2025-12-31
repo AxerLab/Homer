@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Send } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { DocumentUpload } from '@/components/rag'
 
 interface GenerateButtonProps {
   onGenerate: (prompt: string, format: 'PPTX' | 'TeX', theme?: string) => void
@@ -17,6 +18,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState<'PPTX' | 'TeX'>('PPTX')
   const [selectedTheme, setSelectedTheme] = useState<string>('default')
+  const [, setUploadedDocId] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
 
   // Click outside handler
@@ -80,6 +82,11 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe your presentation..."
                 className="w-full h-24 bg-background/50 border border-border rounded-lg px-4 py-3 text-text resize-none focus:outline-none focus:border-primary/50 placeholder:text-text-muted/50"
+              />
+
+              <DocumentUpload
+                onUploadComplete={(docId) => setUploadedDocId(docId)}
+                className="mt-3"
               />
 
               <div className="flex items-center justify-between mt-4 gap-4">

@@ -47,3 +47,41 @@ export type SlideUpdateResponse = {
     tex?: string;
   };
 }
+
+// RAG Types
+export type RAGDocumentUploadResponse = {
+  id: string;
+  filename: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+export type RAGQueryRequest = {
+  question: string;
+  mode?: 'hybrid' | 'local' | 'global' | 'naive';
+  top_k?: number;
+}
+
+export type RAGQueryResponse = {
+  answer: string;
+  question: string;
+  mode: string;
+}
+
+export type RAGContextRequest = {
+  topic: string;
+  mode?: 'hybrid' | 'local' | 'global' | 'naive';
+}
+
+export type RAGContextResponse = {
+  context: string;
+  topic: string;
+}
+
+export type RAGStatus = {
+  working_dir: string;
+  parser: string;
+  embedding_model: string;
+  embedding_dim: number;
+  llm_model: string;
+  initialized: boolean;
+}

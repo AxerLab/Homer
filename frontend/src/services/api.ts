@@ -1,5 +1,14 @@
 // Enhanced API client with proper error handling and logging
-import type { Presentation, CreatePresentationRequest } from '@/types/api';
+import type { 
+  Presentation, 
+  CreatePresentationRequest,
+  RAGDocumentUploadResponse,
+  RAGQueryRequest,
+  RAGQueryResponse,
+  RAGContextRequest,
+  RAGContextResponse,
+  RAGStatus
+} from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -199,3 +208,54 @@ export const presentationApi = {
 
 // Export API base URL for use in other components
 export { API_BASE_URL };
+
+export const ragApi = {
+  async uploadDocument(file: File): Promise<RAGDocumentUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    return handleResponse<RAGDocumentUploadResponse>(response);
+  },
+
+  async query(request: RAGQueryRequest): Promise<RAGQueryResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/query`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    return handleResponse<RAGQueryResponse>(response);
+  },
+
+  async getContext(request: RAGContextRequest): Promise<RAGContextResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/context`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    return handleResponse<RAGContextResponse>(response);
+  },
+
+  async getStatus(): Promise<RAGStatus> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/status`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    return handleResponse<RAGStatus>(response);
+  },
+};
