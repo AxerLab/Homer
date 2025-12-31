@@ -10,7 +10,10 @@ from pathlib import Path
 from backend.db import crud, models
 from backend.api import schemas
 from backend.db.session import get_db, engine
-from backend.core.generator.generator import generate_presentation
+from backend.core.generator.generator import (
+    generate_presentation,
+    generate_presentation_with_rag,
+)
 from backend.core.iterator.iterator import regenerate_slide
 from backend.core.models.presentation.presentation import (
     SlidePresentation as AISlidesPresentation,
@@ -69,20 +72,12 @@ if OUTPUT_DIR.exists():
 
 
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
-def create_presentation(
+async def create_presentation(
     presentation: schemas.PresentationCreate, db: Session = Depends(get_db)
 ):
-    """
-    Create a new presentation:
-    1. Generate presentation JSON from topic
-    2. Store in database
-    3. Generate requested file type (pptx/pdf) with UUID as filename
-    4. Return UUID
-    """
     try:
-        # Generate presentation from topic
-        generated_presentation = generate_presentation(
-            presentation.main_topic, presentation.main_topic
+        generated_presentation = await generate_presentation_with_rag(
+            presentation.main_topic, presentation.main_topic, use_rag=True
         )
 
         # Convert to JSON string for storage
