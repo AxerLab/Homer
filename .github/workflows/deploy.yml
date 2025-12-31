@@ -12,6 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Free up disk space
+      run: |
+        # Remove unnecessary tools to free ~30GB
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo docker system prune -af
+        df -h
+    
     - uses: actions/checkout@v3
 
     - name: Login to Azure Container Registry
