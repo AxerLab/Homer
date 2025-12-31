@@ -9,6 +9,9 @@ RUN pip install uv
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
+# Install CPU-only PyTorch first (much smaller than CUDA version)
+RUN uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --system
+
 # Create virtual environment and install dependencies
 RUN uv sync --frozen --no-dev
 
@@ -33,7 +36,7 @@ COPY main.py ./
 COPY backend ./backend
 
 # Create output directories
-RUN mkdir -p generated_files/pptx generated_files/pdf
+RUN mkdir -p generated_files/pptx generated_files/pdf rag_storage rag_uploads rag_parsed
 
 # Expose port
 EXPOSE 8000
