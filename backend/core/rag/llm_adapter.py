@@ -7,7 +7,7 @@ from lightrag.utils import EmbeddingFunc
 
 from .config import rag_config
 
-HF_INFERENCE_URL = "https://api-inference.huggingface.co/models"
+HF_INFERENCE_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction"
 
 
 async def hf_embedding_func(texts: List[str]) -> np.ndarray:
@@ -15,7 +15,7 @@ async def hf_embedding_func(texts: List[str]) -> np.ndarray:
         return np.array([])
 
     url = f"{HF_INFERENCE_URL}/{rag_config.embedding_model}"
-    headers = {}
+    headers = {"Content-Type": "application/json"}
     if rag_config.hf_api_token:
         headers["Authorization"] = f"Bearer {rag_config.hf_api_token}"
 
@@ -26,7 +26,18 @@ async def hf_embedding_func(texts: List[str]) -> np.ndarray:
             json={"inputs": texts, "options": {"wait_for_model": True}},
         )
         response.raise_for_status()
-        embeddings = response.json()
+        result = response.json()
+
+        # Handle different response formats
+        # TEI returns list of embeddings directly or nested
+        if isinstance(result, list) and len(result) > 0:
+            # If nested (token-level), mean pool
+            if isinstance(result[0], list) and isinstance(result[0][0], list):
+                embeddings = [np.mean(emb, axis=0) for emb in result]
+            else:
+                embeddings = result
+        else:
+            embeddings = result
 
     return np.array(embeddings, dtype=np.float32)
 

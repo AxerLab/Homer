@@ -45,6 +45,7 @@ def extract_unvalidated_output(messages: list) -> dict:
 def generate_presentation(original_prompt: str, user_prompt: str) -> SlidePresentation:
     """
     Generate a slide presentation based on the user's prompt.
+    Synchronous version - use generate_presentation_async for async contexts.
 
     Args:
         original_prompt (str): The user's current prompt for generating the presentation.
@@ -53,6 +54,45 @@ def generate_presentation(original_prompt: str, user_prompt: str) -> SlidePresen
     Returns:
         SlidePresentation: The generated slide presentation.
     """
+    import asyncio
+
+    try:
+        asyncio.get_running_loop()
+        # We're in an async context, this shouldn't be called
+        raise RuntimeError("Use generate_presentation_async in async contexts")
+    except RuntimeError as e:
+        if "no running event loop" in str(e).lower():
+            # No running loop, safe to use run_sync
+            pass
+        else:
+            raise
+
+    return asyncio.run(
+        _generate_presentation_impl(original_prompt, user_prompt, use_async=False)
+    )
+
+
+async def generate_presentation_async(
+    original_prompt: str, user_prompt: str
+) -> SlidePresentation:
+    """
+    Generate a slide presentation based on the user's prompt (async version).
+
+    Args:
+        original_prompt (str): The user's current prompt for generating the presentation.
+        user_prompt (str): An identifier for the user session.
+
+    Returns:
+        SlidePresentation: The generated slide presentation.
+    """
+    return await _generate_presentation_impl(
+        original_prompt, user_prompt, use_async=True
+    )
+
+
+async def _generate_presentation_impl(
+    original_prompt: str, user_prompt: str, use_async: bool = False
+) -> SlidePresentation:
     # Use original_prompt as the key if user_prompt is not provided
     prompt_key = user_prompt
 
@@ -64,10 +104,16 @@ def generate_presentation(original_prompt: str, user_prompt: str) -> SlidePresen
 
     with capture_run_messages() as messages:
         try:
-            agent_result = agent.run_sync(
-                retry_prompt,
-                message_history=global_memory.get_history(user_prompt=prompt_key),
-            )
+            if use_async:
+                agent_result = await agent.run(
+                    retry_prompt,
+                    message_history=global_memory.get_history(user_prompt=prompt_key),
+                )
+            else:
+                agent_result = agent.run_sync(
+                    retry_prompt,
+                    message_history=global_memory.get_history(user_prompt=prompt_key),
+                )
         except (ModelHTTPError, UnexpectedModelBehavior) as e:
             error_msg = str(e)
 
@@ -148,10 +194,20 @@ def generate_presentation(original_prompt: str, user_prompt: str) -> SlidePresen
                 logger.debug(
                     f"Retrying with correction agent, attempt {attempt + 1} of {attempts}"
                 )
-                agent_result = correction_agent.run_sync(
-                    retry_prompt,
-                    message_history=global_memory.get_history(user_prompt=prompt_key),
-                )
+                if use_async:
+                    agent_result = await correction_agent.run(
+                        retry_prompt,
+                        message_history=global_memory.get_history(
+                            user_prompt=prompt_key
+                        ),
+                    )
+                else:
+                    agent_result = correction_agent.run_sync(
+                        retry_prompt,
+                        message_history=global_memory.get_history(
+                            user_prompt=prompt_key
+                        ),
+                    )
                 break  # Exit loop if successful
             except Exception as e:
                 logger.error(f"Error during correction attempt {attempt + 1}: {e}")
@@ -193,4 +249,4 @@ async def generate_presentation_with_rag(
     else:
         enhanced_prompt = original_prompt
 
-    return generate_presentation(enhanced_prompt, user_prompt)
+    return await generate_presentation_async(enhanced_prompt, user_prompt)
