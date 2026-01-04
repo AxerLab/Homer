@@ -14,18 +14,27 @@ logger = logging.getLogger(__name__)
 
 
 class RAGService:
-    """Singleton service for RAG operations using HuggingFace embeddings + Groq LLM"""
-
     _instance: Optional["RAGService"] = None
     _rag: Optional[RAGAnything] = None
     _initialized: bool = False
     _lock: asyncio.Lock = asyncio.Lock()
+    _documents_processed: bool = False
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._lock = asyncio.Lock()
+            cls._documents_processed = cls._check_existing_data()
         return cls._instance
+
+    @classmethod
+    def _check_existing_data(cls) -> bool:
+        working_dir = Path(rag_config.working_dir)
+        if not working_dir.exists():
+            return False
+        kv_store = working_dir / "kv_store_full_docs.json"
+        graph_store = working_dir / "graph_chunk_entity_relation.graphml"
+        return kv_store.exists() or graph_store.exists()
 
     async def initialize(self) -> None:
         """Initialize RAGAnything instance (lazy initialization, thread-safe)"""
@@ -87,6 +96,7 @@ class RAGService:
                 doc_id=doc_id,
                 display_stats=False,
             )
+            self._documents_processed = True
             logger.info(f"Document processed successfully: {file_path}")
             return {"success": True, "file_path": file_path, "doc_id": doc_id}
         except Exception as e:
@@ -128,16 +138,12 @@ class RAGService:
         topic: str,
         mode: str = "hybrid",
     ) -> str:
-        """
-        Get relevant context from RAG for presentation generation.
+        if not self._documents_processed:
+            logger.info(
+                "No documents in RAG knowledge base, skipping context retrieval"
+            )
+            return ""
 
-        Args:
-            topic: Presentation topic
-            mode: Query mode
-
-        Returns:
-            Contextual information string
-        """
         prompt = f"""Based on the documents in the knowledge base, provide relevant 
         background information, facts, and key points about: {topic}
         
@@ -147,7 +153,6 @@ class RAGService:
         return await self.query(prompt, mode=mode)
 
     def get_config_info(self) -> Dict[str, Any]:
-        """Get current configuration info"""
         return {
             "working_dir": str(rag_config.working_dir),
             "parser": rag_config.parser,
@@ -155,6 +160,7 @@ class RAGService:
             "embedding_dim": rag_config.embedding_dim,
             "llm_model": rag_config.groq_model,
             "initialized": self._initialized,
+            "has_documents": self._documents_processed,
         }
 
 
