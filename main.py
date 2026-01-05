@@ -96,7 +96,7 @@ async def create_presentation(
         # Generate file with UUID as name
         if presentation.file_type == "pptx":
             file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
-            structure_to_ppt(
+            await structure_to_ppt(
                 generated_presentation,
                 save_path=str(file_path),
                 theme=presentation.theme,
@@ -109,7 +109,7 @@ async def create_presentation(
         elif presentation.file_type == "pdf":
             # Generate PDF with UUID name in the PDF directory
             pdf_output_path = str(PDF_DIR / db_presentation.id)
-            generate_tex_and_pdf(
+            await generate_tex_and_pdf(
                 generated_presentation,
                 tex_path=f"{pdf_output_path}.tex",
                 output_filename=pdf_output_path,
@@ -248,7 +248,7 @@ def delete_presentation(presentation_id: str, db: Session = Depends(get_db)):
     "/api/v1/presentations/{presentation_id}",
     response_model=schemas.SlideUpdateResponse,
 )
-def update_slide(
+async def update_slide(
     presentation_id: str, slide_data: schemas.SlideUpdate, db: Session = Depends(get_db)
 ):
     """
@@ -295,7 +295,7 @@ def update_slide(
             # Regenerate PPTX with original theme
             pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
             theme = getattr(db_presentation, "theme", None)
-            structure_to_ppt(
+            await structure_to_ppt(
                 updated_presentation, save_path=str(pptx_file), theme=theme
             )
 
@@ -306,7 +306,7 @@ def update_slide(
         else:
             # Regenerate TeX and PDF
             pdf_output_path = str(PDF_DIR / presentation_id)
-            generate_tex_and_pdf(
+            await generate_tex_and_pdf(
                 updated_presentation,
                 tex_path=f"{pdf_output_path}.tex",
                 output_filename=pdf_output_path,

@@ -8,12 +8,21 @@ import requests
 from urllib.parse import urlparse
 import tempfile
 from ...tools.tavily_image_search import tavily_image_search
-import asyncio
+
 
 def escape_latex(text: str) -> str:
     if text is None:
         return ""
-    return text.replace('&', r'\&').replace('%', r'\%').replace('$', r'\$').replace('#', r'\#').replace('_', r'\_').replace('{', r'\{').replace('}', r'\}')
+    return (
+        text.replace("&", r"\&")
+        .replace("%", r"\%")
+        .replace("$", r"\$")
+        .replace("#", r"\#")
+        .replace("_", r"\_")
+        .replace("{", r"\{")
+        .replace("}", r"\}")
+    )
+
 
 def content_to_latex(content: Union[TextContent, list]) -> str:
     latex = ""
@@ -32,26 +41,24 @@ def content_to_latex(content: Union[TextContent, list]) -> str:
             latex += "\\end{itemize}\n"
     return latex
 
-def handle_image_for_latex(image_query: str, output_dir: Path) -> str | None:
+
+async def handle_image_for_latex(image_query: str, output_dir: Path) -> str | None:
     """
     Handle image path for LaTeX inclusion. Downloads URLs to temporary files.
-    
+
     Args:
         image_path: Path to the image file or URL
         output_dir: Directory where temporary files should be saved
-        
+
     Returns:
         Local file path suitable for LaTeX inclusion
     """
     if not image_query:
         return ""
-    
-    image_urls_response = asyncio.run(tavily_image_search(
-        query=image_query,
-        count=3,
-        search_depth="basic",
-        return_first_url=False
-    ))
+
+    image_urls_response = await tavily_image_search(
+        query=image_query, count=3, search_depth="basic", return_first_url=False
+    )
     image_urls = []
     if "**Image URLs:**" in image_urls_response:
         lines = image_urls_response.split("\n")
@@ -60,51 +67,54 @@ def handle_image_for_latex(image_query: str, output_dir: Path) -> str | None:
                 # Extract URL from lines like "1. https://..."
                 url = line.split(". ", 1)[1].strip()
                 image_urls.append(url)
-    
+
     if not image_urls:
         raise ValueError(f"No valid image URLs found for query '{image_query}'")
-    
+
     for image_path in image_urls:
         parsed = urlparse(image_path)
         try:
             # Download the image from URL
             response = requests.get(image_path, timeout=10)
             response.raise_for_status()
-            
+
             # Determine file extension from URL or content-type
             ext = Path(parsed.path).suffix
             if not ext:
-                content_type = response.headers.get('content-type', '')
-                if 'jpeg' in content_type or 'jpg' in content_type:
-                    ext = '.jpg'
-                elif 'png' in content_type:
-                    ext = '.png'
-                elif 'gif' in content_type:
-                    ext = '.gif'
+                content_type = response.headers.get("content-type", "")
+                if "jpeg" in content_type or "jpg" in content_type:
+                    ext = ".jpg"
+                elif "png" in content_type:
+                    ext = ".png"
+                elif "gif" in content_type:
+                    ext = ".gif"
                 else:
-                    ext = '.jpg'  # default
-            
+                    ext = ".jpg"  # default
+
             # Save to a temporary file in the output directory
             temp_file = tempfile.NamedTemporaryFile(
-                delete=False, 
-                suffix=ext, 
-                dir=output_dir
+                delete=False, suffix=ext, dir=output_dir
             )
             temp_file.write(response.content)
             temp_file.close()
-            
+
             return temp_file.name
         except Exception as e:
             print(f"Error downloading image from {image_path}: {e}, trying next URL...")
 
-def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.tex", output_filename: str | None = None):
+
+async def generate_tex_and_pdf(
+    presentation: SlidePresentation,
+    tex_path: str = "test.tex",
+    output_filename: str | None = None,
+):
     """Generate TEX file and PDF from a presentation object.
-    
+
     Args:
         presentation: SlidePresentation object containing slides
         tex_path: Path for the TEX file (default: "test.tex")
         output_filename: Optional output filename/path for the PDF
-    
+
     Returns:
         Path to the generated PDF file
     """
@@ -117,83 +127,99 @@ def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.
     else:
         p = Path(tex_path)
         pdf_basename = p.stem
-        output_dir = p.parent if p.parent != Path('.') else Path.cwd()
-    
+        output_dir = p.parent if p.parent != Path(".") else Path.cwd()
+
     # Track image files that need to be sent to the TEX service
     image_files = []
-    
-    doc = Document(documentclass='beamer')
-    doc.preamble.append(NoEscape(r'\usepackage[utf8]{inputenc}'))
-    doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
-    doc.preamble.append(NoEscape(r'\DeclareUnicodeCharacter{202F}{\,}'))
-    
+
+    doc = Document(documentclass="beamer")
+    doc.preamble.append(NoEscape(r"\usepackage[utf8]{inputenc}"))
+    doc.preamble.append(NoEscape(r"\usepackage{graphicx}"))
+    doc.preamble.append(NoEscape(r"\DeclareUnicodeCharacter{202F}{\,}"))
+
     title = presentation.slides[0].title if presentation.slides else "Presentation"
-    doc.preamble.append(NoEscape(f'\\title{{{escape_latex(title)}}}'))
-    
+    doc.preamble.append(NoEscape(f"\\title{{{escape_latex(title)}}}"))
+
     # Note: We intentionally do NOT add \frame{\maketitle} here.
     # The first slide in the slides array is already a title slide and will be rendered
     # by the loop below. Adding \maketitle would create a duplicate title page.
 
     for slide in presentation.slides:
-        doc.append(NoEscape(f'\\begin{{frame}}{{{escape_latex(slide.title)}}}'))
-        
+        doc.append(NoEscape(f"\\begin{{frame}}{{{escape_latex(slide.title)}}}"))
+
         if slide.layout == SlideLayout.TITLE_AND_CONTENT:
             if slide.content.text:
                 doc.append(NoEscape(content_to_latex(slide.content.text)))
-        
+
         elif slide.layout == SlideLayout.TWO_CONTENT:
-            doc.append(NoEscape(r'\begin{columns}[T]'))
-            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            doc.append(NoEscape(r"\begin{columns}[T]"))
+            doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
             if slide.content.text:
                 doc.append(NoEscape(content_to_latex(slide.content.text)))
-            doc.append(NoEscape(r'\end{column}'))
-            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            doc.append(NoEscape(r"\end{column}"))
+            doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
             if slide.content.text2:
                 doc.append(NoEscape(content_to_latex(slide.content.text2)))
-            doc.append(NoEscape(r'\end{column}'))
-            doc.append(NoEscape(r'\end{columns}'))
+            doc.append(NoEscape(r"\end{column}"))
+            doc.append(NoEscape(r"\end{columns}"))
 
         elif slide.layout == SlideLayout.COMPARISON:
-            doc.append(NoEscape(r'\begin{columns}[T]'))
-            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+            doc.append(NoEscape(r"\begin{columns}[T]"))
+            doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
             if slide.content.comparison:
-                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.left_title)}}}')) # type: ignore
-                doc.append(NoEscape(content_to_latex(slide.content.comparison.left_content))) # type: ignore
-            doc.append(NoEscape(r'\end{column}'))
-            doc.append(NoEscape(r'\begin{column}{.5\textwidth}'))
+                doc.append(
+                    NoEscape(
+                        f"\\textbf{{{escape_latex(slide.content.comparison.left_title)}}}"
+                    )
+                )  # type: ignore
+                doc.append(
+                    NoEscape(content_to_latex(slide.content.comparison.left_content))
+                )  # type: ignore
+            doc.append(NoEscape(r"\end{column}"))
+            doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
             if slide.content.comparison:
-                doc.append(NoEscape(f'\\textbf{{{escape_latex(slide.content.comparison.right_title)}}}')) # type: ignore
-                doc.append(NoEscape(content_to_latex(slide.content.comparison.right_content))) # type: ignore
-            doc.append(NoEscape(r'\end{column}'))
-            doc.append(NoEscape(r'\end{columns}'))
-        
+                doc.append(
+                    NoEscape(
+                        f"\\textbf{{{escape_latex(slide.content.comparison.right_title)}}}"
+                    )
+                )  # type: ignore
+                doc.append(
+                    NoEscape(content_to_latex(slide.content.comparison.right_content))
+                )  # type: ignore
+            doc.append(NoEscape(r"\end{column}"))
+            doc.append(NoEscape(r"\end{columns}"))
+
         elif slide.layout == SlideLayout.SECTION_HEADER:
             if slide.content.text:
                 doc.append(NoEscape(content_to_latex(slide.content.text)))
-        
+
         elif slide.layout == SlideLayout.CONTENT_WITH_CAPTION:
             if slide.content.text:
                 doc.append(NoEscape(content_to_latex(slide.content.text)))
             if slide.content.text2:
-                doc.append(NoEscape(r'{\tiny\par}'))
+                doc.append(NoEscape(r"{\tiny\par}"))
                 doc.append(NoEscape(content_to_latex(slide.content.text2)))
-        
+
         elif slide.layout == SlideLayout.PICTURE_WITH_CAPTION:
             if slide.image:
-                local_image_path = handle_image_for_latex(slide.image, output_dir)
+                local_image_path = await handle_image_for_latex(slide.image, output_dir)
                 if local_image_path:
                     # Track image for sending to service
                     image_files.append(local_image_path)
                     # Use only filename (relative path) for TEX file - Docker container will have it in same dir
                     image_filename = Path(local_image_path).name
-                    doc.append(NoEscape(r'\begin{center}'))
-                    doc.append(NoEscape(f'\\includegraphics[width=0.8\\textwidth]{{{image_filename}}}'))
-                    doc.append(NoEscape(r'\end{center}'))
+                    doc.append(NoEscape(r"\begin{center}"))
+                    doc.append(
+                        NoEscape(
+                            f"\\includegraphics[width=0.8\\textwidth]{{{image_filename}}}"
+                        )
+                    )
+                    doc.append(NoEscape(r"\end{center}"))
             if slide.content and slide.content.text and slide.content.text.para:
-                doc.append(NoEscape(r'{\tiny\par}'))
+                doc.append(NoEscape(r"{\tiny\par}"))
                 doc.append(NoEscape(escape_latex(slide.content.text.para)))
-        
-        doc.append(NoEscape(r'\end{frame}'))
+
+        doc.append(NoEscape(r"\end{frame}"))
 
     # generate_tex expects a path without the .tex extension
     # Generate tex file in the output directory
@@ -202,60 +228,66 @@ def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.
 
     # Reconstruct the full path to the .tex file
     tex_file_path = Path(f"{tex_output_path}.tex")
-    
+
     # Call the TeX service
     import requests
     import os
-    
+
     tex_service_url = os.getenv("TEX_SERVICE_URL", "http://localhost:8001")
     url = f"{tex_service_url}/generate-pdf"
-    
+
     try:
         # Prepare files to send: TEX file + all image files
         files_list = []
         opened_files = []
-        
+
         # Open TEX file
-        tex_file = open(tex_file_path, 'rb')
+        tex_file = open(tex_file_path, "rb")
         opened_files.append(tex_file)
-        files_list.append(('file', (tex_file_path.name, tex_file, 'application/x-tex')))
-        
+        files_list.append(("file", (tex_file_path.name, tex_file, "application/x-tex")))
+
         # Add all image files with their original filenames
         for img_path in image_files:
             img_path_obj = Path(img_path)
             if img_path_obj.exists():
-                img_file = open(img_path, 'rb')
+                img_file = open(img_path, "rb")
                 opened_files.append(img_file)
                 ext = img_path_obj.suffix.lower()
-                mime_type = 'image/jpeg' if ext in ['.jpg', '.jpeg'] else 'image/png' if ext == '.png' else 'image/*'
-                files_list.append(('file', (img_path_obj.name, img_file, mime_type)))
+                mime_type = (
+                    "image/jpeg"
+                    if ext in [".jpg", ".jpeg"]
+                    else "image/png"
+                    if ext == ".png"
+                    else "image/*"
+                )
+                files_list.append(("file", (img_path_obj.name, img_file, mime_type)))
                 print(f"Adding image to upload: {img_path_obj.name}")
-        
+
         print(f"Uploading {len(files_list)} files to TEX service")
         response = requests.post(url, files=files_list, timeout=120)
-        
+
         # Close all opened files
         for f in opened_files:
             f.close()
-        
+
         # Clean up temporary image files
         for img_path in image_files:
             img_path_obj = Path(img_path)
-            if img_path_obj.exists() and 'tmp' in img_path_obj.name:
+            if img_path_obj.exists() and "tmp" in img_path_obj.name:
                 try:
                     img_path_obj.unlink()
                 except OSError:
                     pass
-        
+
         if response.status_code == 200:
             pdf_path = output_dir / f"{pdf_basename}.pdf"
-            with open(pdf_path, 'wb') as f:
+            with open(pdf_path, "wb") as f:
                 f.write(response.content)
             return pdf_path.resolve()
         else:
             print(f"TeX Service Error: {response.status_code} - {response.text}")
             raise Exception(f"TeX Service failed: {response.text}")
-            
+
     except Exception as e:
         print(f"Error calling TeX service: {e}")
         # Try to close any open files
@@ -265,4 +297,3 @@ def generate_tex_and_pdf(presentation: SlidePresentation, tex_path: str = "test.
         except:
             pass
         raise
-
