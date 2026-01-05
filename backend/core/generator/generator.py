@@ -141,8 +141,8 @@ async def _generate_presentation_impl(
 
             # For UnexpectedModelBehavior, check if it contains validation errors
             elif isinstance(e, UnexpectedModelBehavior):
-                logger.error(
-                    f"UnexpectedModelBehavior encountered: {error_msg[:200]}..."
+                logger.warning(
+                    f"UnexpectedModelBehavior encountered: {error_msg[:200]}... (Not an error)"
                 )
                 if "validation" in error_msg.lower() or "schema" in error_msg.lower():
                     is_schema_error = True
