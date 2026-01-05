@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 interface LoadingOverlayProps {
     isVisible: boolean
     message?: string
+    subMessage?: string
     className?: string
     variant?: 'fullscreen' | 'inline'
 }
@@ -12,6 +13,7 @@ interface LoadingOverlayProps {
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     isVisible,
     message = 'Generating...',
+    subMessage = 'This may take a moment',
     className,
     variant = 'fullscreen'
 }) => {
@@ -57,6 +59,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                         {/* Message */}
                         <div className="flex flex-col items-center gap-2">
                             <motion.h3
+                                key={message}
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
@@ -65,12 +68,13 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
                                 {message}
                             </motion.h3>
                             <motion.p
+                                key={subMessage}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 0.5 }}
                                 transition={{ delay: 0.2 }}
                                 className="text-sm text-text-muted font-light"
                             >
-                                This may take a moment
+                                {subMessage}
                             </motion.p>
                         </div>
                     </motion.div>

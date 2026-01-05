@@ -6,15 +6,23 @@ import { ragApi } from '@/services/api'
 
 interface DocumentUploadProps {
   onUploadComplete?: (docId: string, filename: string) => void
+  onProcessingComplete?: (docId: string, filename: string) => void
   onUploadError?: (error: string) => void
+  onProcessingError?: (error: string) => void
+  onClear?: () => void
+  waitForProcessing?: boolean
   className?: string
 }
 
-type UploadState = 'idle' | 'uploading' | 'success' | 'error'
+type UploadState = 'idle' | 'uploading' | 'processing' | 'success' | 'error'
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   onUploadComplete,
+  onProcessingComplete,
   onUploadError,
+  onProcessingError,
+  onClear,
+  waitForProcessing = true,
   className
 }) => {
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -31,20 +39,39 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
     try {
       const response = await ragApi.uploadDocument(file)
-      setUploadState('success')
       onUploadComplete?.(response.id, response.filename)
       
-      setTimeout(() => {
-        setUploadState('idle')
-        setUploadedFile(null)
-      }, 3000)
+      if (waitForProcessing) {
+        setUploadState('processing')
+        
+        const finalStatus = await ragApi.waitForDocumentProcessing(response.id, {
+          pollInterval: 2000,
+          maxAttempts: 150,
+        })
+        
+        if (finalStatus.status === 'completed') {
+          setUploadState('success')
+          onProcessingComplete?.(response.id, response.filename)
+        } else if (finalStatus.status === 'failed') {
+          const errMsg = finalStatus.error || 'Document processing failed'
+          setUploadState('error')
+          setErrorMessage(errMsg)
+          onProcessingError?.(errMsg)
+        }
+      } else {
+        setUploadState('success')
+        setTimeout(() => {
+          setUploadState('idle')
+          setUploadedFile(null)
+        }, 3000)
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed'
       setUploadState('error')
       setErrorMessage(message)
       onUploadError?.(message)
     }
-  }, [onUploadComplete, onUploadError])
+  }, [onUploadComplete, onProcessingComplete, onUploadError, onProcessingError, waitForProcessing])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -58,7 +85,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       'text/markdown': ['.md'],
     },
     maxFiles: 1,
-    disabled: uploadState === 'uploading',
+    disabled: uploadState === 'uploading' || uploadState === 'processing',
   })
 
   const handleClear = (e: React.MouseEvent) => {
@@ -66,7 +93,10 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     setUploadState('idle')
     setUploadedFile(null)
     setErrorMessage(null)
+    onClear?.()
   }
+
+  const isProcessing = uploadState === 'uploading' || uploadState === 'processing'
 
   return (
     <div
@@ -75,7 +105,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
         'relative border-2 border-dashed rounded-lg p-4 transition-all cursor-pointer',
         isDragActive && 'border-primary bg-primary/10',
         uploadState === 'idle' && 'border-border hover:border-primary/50',
-        uploadState === 'uploading' && 'border-primary/50 bg-primary/5',
+        isProcessing && 'border-primary/50 bg-primary/5',
         uploadState === 'success' && 'border-accent bg-accent/10',
         uploadState === 'error' && 'border-destructive bg-destructive/10',
         className
@@ -101,12 +131,21 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
             </span>
           </>
         )}
+
+        {uploadState === 'processing' && (
+          <>
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-text truncate max-w-[200px]">
+              Parsing document...
+            </span>
+          </>
+        )}
         
         {uploadState === 'success' && (
           <>
             <CheckCircle className="w-5 h-5 text-accent" />
             <span className="text-sm text-accent truncate max-w-[200px]">
-              {uploadedFile} added
+              {uploadedFile} ready
             </span>
             <button onClick={handleClear} className="ml-auto">
               <Close className="w-4 h-4 text-text-muted hover:text-text" />

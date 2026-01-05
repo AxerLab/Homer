@@ -62,3 +62,16 @@ class RAGContextResponse(BaseModel):
 
     context: str = Field(..., description="Relevant context from documents")
     topic: str = Field(..., description="Original topic")
+
+
+class RAGDocumentStatusResponse(BaseModel):
+    """Response for document processing status check"""
+
+    id: str = Field(..., description="Document UUID")
+    filename: str = Field(..., description="Original filename")
+    status: Literal["pending", "processing", "completed", "failed"] = Field(
+        ..., description="Current processing status"
+    )
+    error: Optional[str] = Field(None, description="Error message if failed")
+    started_at: Optional[str] = Field(None, description="When processing started")
+    completed_at: Optional[str] = Field(None, description="When processing completed")

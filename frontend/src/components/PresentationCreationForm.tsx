@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { presentationApi } from '@/services/api';
+import { DocumentUpload } from '@/components/rag/DocumentUpload';
 
 interface PresentationCreationFormProps {
   onPresentationCreated?: (presentationId: string) => void;
 }
+
+type FormStage = 'idle' | 'document_processing' | 'generating';
 
 export const PresentationCreationForm: React.FC<
   PresentationCreationFormProps
@@ -13,12 +16,15 @@ export const PresentationCreationForm: React.FC<
   const [topic, setTopic] = useState('');
   const [fileType, setFileType] = useState<'pptx' | 'pdf'>('pptx');
   const [theme, setTheme] = useState<string>('default');
+  const [documentReady, setDocumentReady] = useState<boolean>(false);
+  const [formStage, setFormStage] = useState<FormStage>('idle');
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: () => presentationApi.createPresentation(topic, fileType, theme),
     onSuccess: (data) => {
+      setFormStage('idle');
       queryClient.invalidateQueries({ queryKey: ['presentations'] });
       if (onPresentationCreated) {
         onPresentationCreated(data.id);
@@ -29,13 +35,33 @@ export const PresentationCreationForm: React.FC<
         });
       }
     },
+    onError: () => {
+      setFormStage('idle');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!topic.trim()) return;
+    setFormStage('generating');
     mutation.mutate();
   };
+
+  const handleDocumentProcessingComplete = (_docId: string, _filename: string) => {
+    setDocumentReady(true);
+    setFormStage('idle');
+  };
+
+  const handleDocumentUploadStart = () => {
+    setFormStage('document_processing');
+    setDocumentReady(false);
+  };
+
+  const handleDocumentClear = () => {
+    setDocumentReady(false);
+  };
+
+  const isProcessing = formStage !== 'idle';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -50,8 +76,28 @@ export const PresentationCreationForm: React.FC<
           onChange={(e) => setTopic(e.target.value)}
           className="w-full p-2 border border-border rounded dark:bg-background-elevated"
           placeholder="Enter your presentation topic..."
-          disabled={mutation.isPending}
+          disabled={isProcessing}
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Context Document <span className="text-text-muted">(optional)</span>
+        </label>
+        <DocumentUpload
+          onUploadComplete={handleDocumentUploadStart}
+          onProcessingComplete={handleDocumentProcessingComplete}
+          onProcessingError={() => setFormStage('idle')}
+          onUploadError={() => setFormStage('idle')}
+          onClear={handleDocumentClear}
+          waitForProcessing={true}
+          className="w-full"
+        />
+        {documentReady && (
+          <p className="text-xs text-accent mt-1">
+            Document indexed and ready for context retrieval
+          </p>
+        )}
       </div>
 
       <div>
@@ -64,7 +110,7 @@ export const PresentationCreationForm: React.FC<
               checked={fileType === 'pptx'}
               onChange={() => setFileType('pptx')}
               className="mr-2"
-              disabled={mutation.isPending}
+              disabled={isProcessing}
             />
             PowerPoint (PPTX)
           </label>
@@ -75,7 +121,7 @@ export const PresentationCreationForm: React.FC<
               checked={fileType === 'pdf'}
               onChange={() => setFileType('pdf')}
               className="mr-2"
-              disabled={mutation.isPending}
+              disabled={isProcessing}
             />
             PDF
           </label>
@@ -91,7 +137,7 @@ export const PresentationCreationForm: React.FC<
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
           className="w-full p-2 border border-border rounded dark:bg-background-elevated"
-          disabled={mutation.isPending || fileType === 'pdf'}
+          disabled={isProcessing || fileType === 'pdf'}
         >
           <option value="default">Default</option>
           <option value="psychedelic_vibrant">Psychedelic Vibrant</option>
@@ -114,9 +160,13 @@ export const PresentationCreationForm: React.FC<
       <button
         type="submit"
         className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary disabled:opacity-50"
-        disabled={mutation.isPending || !topic.trim()}
+        disabled={isProcessing || !topic.trim()}
       >
-        {mutation.isPending ? 'Generating...' : 'Generate Presentation'}
+        {formStage === 'document_processing' 
+          ? 'Processing document...' 
+          : formStage === 'generating' 
+            ? 'Generating presentation...' 
+            : 'Generate Presentation'}
       </button>
     </form>
   );

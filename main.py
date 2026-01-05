@@ -22,7 +22,7 @@ from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
 from backend.config.logs import logger
-from backend.core.rag.service import rag_service
+from backend.core.rag.service import rag_service, DocumentStatus
 from backend.core.rag.config import rag_config
 from backend.core.rag.schemas import (
     RAGQueryRequest,
@@ -30,6 +30,7 @@ from backend.core.rag.schemas import (
     RAGContextRequest,
     RAGContextResponse,
     RAGDocumentCreate,
+    RAGDocumentStatusResponse,
 )
 import logfire
 
@@ -359,10 +360,13 @@ async def upload_document(
         logger.error(f"Failed to save uploaded file: {e}")
         raise HTTPException(status_code=500, detail="Failed to save file")
 
+    # Register document for status tracking
+    rag_service.register_document(doc_id, file.filename)
+
     async def process_doc():
         try:
             await rag_service.initialize()
-            await rag_service.process_document(str(file_path), doc_id=doc_id)
+            await rag_service.process_document(str(file_path), doc_id=doc_id, filename=file.filename)
             logger.info(f"Document processed: {doc_id}")
         except Exception as e:
             logger.error(f"Background processing failed for {doc_id}: {e}")
@@ -405,3 +409,23 @@ async def get_rag_context(request: RAGContextRequest):
 @app.get("/api/v1/rag/status")
 async def rag_status():
     return rag_service.get_config_info()
+
+
+@app.get("/api/v1/rag/document/{doc_id}/status", response_model=RAGDocumentStatusResponse)
+async def get_document_status(doc_id: str):
+    """
+    Get the processing status of an uploaded document.
+    Poll this endpoint to check when document processing is complete.
+    """
+    doc_info = rag_service.get_document_status(doc_id)
+    if doc_info is None:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+    
+    return RAGDocumentStatusResponse(
+        id=doc_info.doc_id,
+        filename=doc_info.filename,
+        status=doc_info.status.value,
+        error=doc_info.error,
+        started_at=doc_info.started_at.isoformat() if doc_info.started_at else None,
+        completed_at=doc_info.completed_at.isoformat() if doc_info.completed_at else None,
+    )

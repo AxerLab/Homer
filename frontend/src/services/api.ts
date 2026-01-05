@@ -7,7 +7,8 @@ import type {
   RAGQueryResponse,
   RAGContextRequest,
   RAGContextResponse,
-  RAGStatus
+  RAGStatus,
+  RAGDocumentStatus
 } from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -257,5 +258,47 @@ export const ragApi = {
     });
 
     return handleResponse<RAGStatus>(response);
+  },
+
+  async getDocumentStatus(docId: string): Promise<RAGDocumentStatus> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/document/${docId}/status`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    return handleResponse<RAGDocumentStatus>(response);
+  },
+
+  /**
+   * Poll document status until processing is complete or failed.
+   * Returns the final status when done.
+   */
+  async waitForDocumentProcessing(
+    docId: string, 
+    options?: { 
+      pollInterval?: number; 
+      maxAttempts?: number;
+      onStatusChange?: (status: RAGDocumentStatus) => void;
+    }
+  ): Promise<RAGDocumentStatus> {
+    const pollInterval = options?.pollInterval ?? 2000; // 2 seconds
+    const maxAttempts = options?.maxAttempts ?? 150; // 5 minutes max
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const status = await this.getDocumentStatus(docId);
+      
+      options?.onStatusChange?.(status);
+      
+      if (status.status === 'completed' || status.status === 'failed') {
+        return status;
+      }
+      
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+    
+    throw new Error('Document processing timed out');
   },
 };

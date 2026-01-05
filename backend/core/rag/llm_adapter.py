@@ -1,43 +1,30 @@
-import asyncio
+import os
 from typing import List, Optional
 import numpy as np
 import httpx
+from huggingface_hub import AsyncInferenceClient
 
 from lightrag.utils import EmbeddingFunc
 
 from .config import rag_config
-
-HF_INFERENCE_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction"
 
 
 async def hf_embedding_func(texts: List[str]) -> np.ndarray:
     if not texts:
         return np.array([])
 
-    url = f"{HF_INFERENCE_URL}/{rag_config.embedding_model}"
-    headers = {"Content-Type": "application/json"}
-    if rag_config.hf_api_token:
-        headers["Authorization"] = f"Bearer {rag_config.hf_api_token}"
+    client = AsyncInferenceClient(
+        provider="hf-inference",
+        api_key=rag_config.hf_api_token or os.environ.get("HF_TOKEN"),
+    )
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            url,
-            headers=headers,
-            json={"inputs": texts, "options": {"wait_for_model": True}},
+    embeddings = []
+    for text in texts:
+        result = await client.feature_extraction(
+            text,
+            model=rag_config.embedding_model,
         )
-        response.raise_for_status()
-        result = response.json()
-
-        # Handle different response formats
-        # TEI returns list of embeddings directly or nested
-        if isinstance(result, list) and len(result) > 0:
-            # If nested (token-level), mean pool
-            if isinstance(result[0], list) and isinstance(result[0][0], list):
-                embeddings = [np.mean(emb, axis=0) for emb in result]
-            else:
-                embeddings = result
-        else:
-            embeddings = result
+        embeddings.append(result)
 
     return np.array(embeddings, dtype=np.float32)
 

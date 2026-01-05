@@ -1,0 +1,62 @@
+{
+  "4e74d768-8412-4571-a41c-1c5e675a44d3": {
+    "status": "failed",
+    "error_msg": "C[1/11]: chunk-fb44ac983a15665a91ae429daa3fad8f: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
+    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
+    "content_length": 48410,
+    "created_at": "2026-01-05T18:29:04.938208+00:00",
+    "updated_at": "2026-01-05T19:10:51.481363+00:00",
+    "file_path": "4e74d768-8412-4571-a41c-1c5e675a44d3.pdf",
+    "track_id": "insert_20260105_235904_b1da8ab9",
+    "metadata": {
+      "processing_start_time": 1767640246,
+      "processing_end_time": 1767640251
+    },
+    "chunks_list": []
+  },
+  "d54a4b83-a6f4-44c0-9127-678d726939fa": {
+    "status": "failed",
+    "error_msg": "C[1/11]: chunk-59a06307d2b9c427ade9e067a938b194: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
+    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
+    "content_length": 48401,
+    "created_at": "2026-01-05T18:54:54.234071+00:00",
+    "updated_at": "2026-01-05T19:10:51.769177+00:00",
+    "file_path": "d54a4b83-a6f4-44c0-9127-678d726939fa.pdf",
+    "track_id": "insert_20260106_002454_3caed6f3",
+    "metadata": {
+      "processing_start_time": 1767640246,
+      "processing_end_time": 1767640251
+    },
+    "chunks_list": []
+  },
+  "b8e65402-e5a8-4060-aea0-c03c10c08c77": {
+    "status": "failed",
+    "error_msg": "C[1/11]: chunk-fb44ac983a15665a91ae429daa3fad8f: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
+    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
+    "content_length": 48410,
+    "created_at": "2026-01-05T19:04:17.663729+00:00",
+    "updated_at": "2026-01-05T19:10:55.587380+00:00",
+    "file_path": "b8e65402-e5a8-4060-aea0-c03c10c08c77.pdf",
+    "track_id": "insert_20260106_003417_c71845bc",
+    "metadata": {
+      "processing_start_time": 1767640251,
+      "processing_end_time": 1767640255
+    },
+    "chunks_list": []
+  },
+  "8b38f2ed-0a66-496e-ab0d-362760ac6a0d": {
+    "status": "failed",
+    "error_msg": "C[1/11]: chunk-2c2c319f3552a824fe456c9df047c7c8: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
+    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
+    "content_length": 48401,
+    "created_at": "2026-01-05T19:10:46.544762+00:00",
+    "updated_at": "2026-01-05T19:10:56.411813+00:00",
+    "file_path": "8b38f2ed-0a66-496e-ab0d-362760ac6a0d.pdf",
+    "track_id": "insert_20260106_004046_eeeddb96",
+    "metadata": {
+      "processing_start_time": 1767640251,
+      "processing_end_time": 1767640256
+    },
+    "chunks_list": []
+  }
+}

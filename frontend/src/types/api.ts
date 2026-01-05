@@ -85,3 +85,12 @@ export type RAGStatus = {
   llm_model: string;
   initialized: boolean;
 }
+
+export type RAGDocumentStatus = {
+  id: string;
+  filename: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}

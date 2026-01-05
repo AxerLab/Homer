@@ -1,0 +1,46 @@
+{
+  "b8e65402-e5a8-4060-aea0-c03c10c08c77": {
+    "entity_names": [
+      "image_cd10e8b8213d1b98b1f29a24fd87dcc6",
+      "equation_2fb6bfbc467a7f874b9431ab5acc8d94",
+      "equation_0a90f8735246760eec28387d6f36a2ff",
+      "equation_dcaa0e86f24c27332c0ddb8e2d33a121",
+      "image_dca5e3b2d5f1c30a17a4fd0359cf48d7",
+      "equation_b20a0e79de6179b1fa4ddfedc39ce735",
+      "equation_9e265202d93c15b324140165c4a08f0e",
+      "table_839ca2a657c2d353e60752313548481e",
+      "table_88e68808bde8b189c72e6ad749947c91",
+      "table_82da4799aa979375968ec082c45ceaa8",
+      "image_af04329b48dc58a2cd84b99d9edfd7ee",
+      "image_963a9f36354223e39c8b767f074589eb",
+      "table_ed7611cafc1c65cf5dca35a129302c19",
+      "image_f09672fbd9d116277827cf7cfbed9a8f"
+    ],
+    "count": 14,
+    "update_time": 1767639879,
+    "create_time": 1767639879,
+    "_id": "b8e65402-e5a8-4060-aea0-c03c10c08c77"
+  },
+  "8b38f2ed-0a66-496e-ab0d-362760ac6a0d": {
+    "entity_names": [
+      "image_d34e5badee8a72858d6399b69bcb7136",
+      "equation_88d137b5ca2b05205c0d12aae437d2cc",
+      "equation_b471c0ef49afab769f4c0d6a371be5b9",
+      "equation_b823e65d171ff218b9f8a56501b78434",
+      "image_4942657e32ad43b9513bd8f761a3e768",
+      "equation_eecd79e376f9dc9a2b6b89ac3c90a1e3",
+      "equation_aedc59191179ad70f62dcaf20206c6b8",
+      "table_229a443017362db4d32dc3347576fc07",
+      "table_915ddd12ba5a48a309f979817c1cf4b0",
+      "table_0d6022ccba63ec8fe90610eb52fbace2",
+      "image_45813c55706e771e110040647a8c1e34",
+      "image_913d2c46538d24d5eb522ac6a4471189",
+      "table_1e993ad4621f5466726f0add2f4517a1",
+      "image_37b7cd304c4b0d8353586ac5d3ec7b79"
+    ],
+    "count": 14,
+    "update_time": 1767640266,
+    "create_time": 1767640266,
+    "_id": "8b38f2ed-0a66-496e-ab0d-362760ac6a0d"
+  }
+}
