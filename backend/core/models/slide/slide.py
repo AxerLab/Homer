@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
 
+
 class Slide(BaseModel):
     """Individual slide model with enhanced validation and type safety."""
 
@@ -11,13 +12,16 @@ class Slide(BaseModel):
     )
     content: Optional[SlideContent] = Field(
         default=SlideContent(text=None, text2=None, comparison=None),
-        description="The content of the slide"
+        description="The content of the slide",
     )
     layout: SlideLayout = Field(
-        ..., description=f"The layout type for the slide. {SlideLayout.get_schema_description()}"
+        ...,
+        description=f"The layout type for the slide. {SlideLayout.get_schema_description()}",
     )
     image: Optional[str] = Field(
-        None, description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.", max_length=500
+        None,
+        description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.",
+        max_length=500,
     )
 
     # conflicts with blank layout
@@ -108,7 +112,9 @@ class Slide(BaseModel):
 
         if self.layout == SlideLayout.TITLE_AND_CONTENT:
             if not self.content.text:
-                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content")
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content"
+                )
             if not self.content.text.para and not self.content.text.bullet:
                 raise ValueError(
                     f"Slides with layout '{self.layout}' must have 'text' content "
@@ -117,7 +123,9 @@ class Slide(BaseModel):
 
         if self.layout == SlideLayout.SECTION_HEADER:
             if not self.content.text:
-                raise ValueError(f"Slides with layout '{self.layout}' must have 'text' content")
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' must have 'text' content"
+                )
             if self.content.text.para is None or self.content.text.bullet != []:
                 raise ValueError(
                     f"Slides with layout '{self.layout}' must have 'text' content "
@@ -137,7 +145,7 @@ class Slide(BaseModel):
                     f"Slides with layout '{self.layout}' must have both 'text', "
                     "'text2' content"
                 )
-        
+
         if self.layout == SlideLayout.PICTURE_WITH_CAPTION:
             if not self.image:
                 raise ValueError(
@@ -152,6 +160,7 @@ class Slide(BaseModel):
                     f"Slides with layout '{self.layout}' must have 'text' content "
                     "as caption and not bullet points"
                 )
+
         return self
 
     @field_validator("image")
