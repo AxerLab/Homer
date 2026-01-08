@@ -1,62 +1,62 @@
 {
-  "4e74d768-8412-4571-a41c-1c5e675a44d3": {
-    "status": "failed",
-    "error_msg": "C[1/11]: chunk-fb44ac983a15665a91ae429daa3fad8f: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
-    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
-    "content_length": 48410,
-    "created_at": "2026-01-05T18:29:04.938208+00:00",
-    "updated_at": "2026-01-05T19:10:51.481363+00:00",
-    "file_path": "4e74d768-8412-4571-a41c-1c5e675a44d3.pdf",
-    "track_id": "insert_20260105_235904_b1da8ab9",
+  "e04288b9-1b96-4e97-a221-843bbbd8ddae": {
+    "status": "processed",
+    "chunks_count": 1,
+    "chunks_list": [
+      "chunk-8970e517bc44ba5aa3ff320a62df71a2"
+    ],
+    "content_summary": "The tiger (Panthera tigris) is a large cat and a member of the genus Panthera native to Asia. It has a powerful, muscular body with a large head and paws, a long tail and orange fur with black, mostly vertical stripes. It is traditionally classified ...",
+    "content_length": 2164,
+    "created_at": "2026-01-08T06:41:51.450198+00:00",
+    "updated_at": "2026-01-08T08:27:19.943122+00:00",
+    "file_path": "e04288b9-1b96-4e97-a221-843bbbd8ddae.pdf",
+    "track_id": "insert_20260108_121151_1ad8c32d",
     "metadata": {
-      "processing_start_time": 1767640246,
-      "processing_end_time": 1767640251
-    },
-    "chunks_list": []
+      "processing_start_time": 1767860796,
+      "processing_end_time": 1767860839
+    }
   },
-  "d54a4b83-a6f4-44c0-9127-678d726939fa": {
-    "status": "failed",
-    "error_msg": "C[1/11]: chunk-59a06307d2b9c427ade9e067a938b194: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
-    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
-    "content_length": 48401,
-    "created_at": "2026-01-05T18:54:54.234071+00:00",
-    "updated_at": "2026-01-05T19:10:51.769177+00:00",
-    "file_path": "d54a4b83-a6f4-44c0-9127-678d726939fa.pdf",
-    "track_id": "insert_20260106_002454_3caed6f3",
+  "37fd7753-c27e-4a13-b575-e844678d91ed": {
+    "status": "processed",
+    "chunks_count": 1,
+    "chunks_list": [
+      "chunk-8970e517bc44ba5aa3ff320a62df71a2"
+    ],
+    "content_summary": "The tiger (Panthera tigris) is a large cat and a member of the genus Panthera native to Asia. It has a powerful, muscular body with a large head and paws, a long tail and orange fur with black, mostly vertical stripes. It is traditionally classified ...",
+    "content_length": 2164,
+    "created_at": "2026-01-08T06:47:17.473772+00:00",
+    "updated_at": "2026-01-08T08:27:23.690174+00:00",
+    "file_path": "37fd7753-c27e-4a13-b575-e844678d91ed.pdf",
+    "track_id": "insert_20260108_121717_f480de10",
     "metadata": {
-      "processing_start_time": 1767640246,
-      "processing_end_time": 1767640251
-    },
-    "chunks_list": []
+      "processing_start_time": 1767860796,
+      "processing_end_time": 1767860843
+    }
   },
-  "b8e65402-e5a8-4060-aea0-c03c10c08c77": {
-    "status": "failed",
-    "error_msg": "C[1/11]: chunk-fb44ac983a15665a91ae429daa3fad8f: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
-    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
-    "content_length": 48410,
-    "created_at": "2026-01-05T19:04:17.663729+00:00",
-    "updated_at": "2026-01-05T19:10:55.587380+00:00",
-    "file_path": "b8e65402-e5a8-4060-aea0-c03c10c08c77.pdf",
-    "track_id": "insert_20260106_003417_c71845bc",
+  "4f1bf078-a90b-4cab-8bd0-821837a5bd70": {
+    "status": "processed",
+    "chunks_count": 9,
+    "chunks_list": [
+      "chunk-8970e517bc44ba5aa3ff320a62df71a2",
+      "chunk-db040e702317e57fb21fa90ac4cd6e0f",
+      "chunk-1b3887d4fe7a6c648be900e7efd9388f",
+      "chunk-e39247e71ae54236432f8ae473abccda",
+      "chunk-eae08fc272e572e52534eb817df41c8e",
+      "chunk-8e0fcacd58caab944d814625c0f65258",
+      "chunk-17f35b3fa18fa0ce23a55229499d1ff4",
+      "chunk-c911ec02e8bbb2e4ea28c5b5c9c58d1c",
+      "chunk-4793f7f9b8c83cf91db541854416a026"
+    ],
+    "content_summary": "The tiger (Panthera tigris) is a large cat and a member of the genus Panthera native to Asia. It has a powerful, muscular body with a large head and paws, a long tail and orange fur with black, mostly vertical stripes. It is traditionally classified ...",
+    "content_length": 2164,
+    "created_at": "2026-01-08T08:26:36.070309+00:00",
+    "updated_at": "2026-01-08T14:00:40+00:00",
+    "file_path": "4f1bf078-a90b-4cab-8bd0-821837a5bd70.pdf",
+    "track_id": "insert_20260108_135636_90a6d04c",
     "metadata": {
-      "processing_start_time": 1767640251,
-      "processing_end_time": 1767640255
+      "processing_start_time": 1767860839,
+      "processing_end_time": 1767860854
     },
-    "chunks_list": []
-  },
-  "8b38f2ed-0a66-496e-ab0d-362760ac6a0d": {
-    "status": "failed",
-    "error_msg": "C[1/11]: chunk-2c2c319f3552a824fe456c9df047c7c8: HTTPStatusError: Client error '429 Too Many Requests' for url 'https://api.groq.com/openai/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429 (Original exception could not be reconstructed: HTTPStatusError.__init__() missing 2 required keyword-only arguments: 'request' and 'response')",
-    "content_summary": "MediSecFed: Private and Secure Medical Image Classification in the Presence of Malicious Clients \n\nAbhinav Kumar $\\textcircled{1}$ , Graduate Student Member, IEEE, Vishal Purohit $\\textcircled{1}$ , Vandana Bharti $\\textcircled{1}$ , Graduate Student...",
-    "content_length": 48401,
-    "created_at": "2026-01-05T19:10:46.544762+00:00",
-    "updated_at": "2026-01-05T19:10:56.411813+00:00",
-    "file_path": "8b38f2ed-0a66-496e-ab0d-362760ac6a0d.pdf",
-    "track_id": "insert_20260106_004046_eeeddb96",
-    "metadata": {
-      "processing_start_time": 1767640251,
-      "processing_end_time": 1767640256
-    },
-    "chunks_list": []
+    "multimodal_processed": true
   }
 }

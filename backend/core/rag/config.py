@@ -37,12 +37,6 @@ class RAGConfig:
         default_factory=lambda: int(os.getenv("RAG_EMBEDDING_DIM", "384"))
     )
 
-    # Groq LLM Configuration (uses existing GROQ_API_KEY from app)
-    groq_api_key: str = field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
-    groq_model: str = field(
-        default_factory=lambda: os.getenv("RAG_LLM_MODEL", "qwen/qwen3-32b")
-    )
-
     # Parser Configuration
     parser: str = "mineru"  # or "docling"
     parse_method: str = "auto"  # auto, ocr, txt

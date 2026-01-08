@@ -154,6 +154,10 @@ class RAGService:
                 parse_method=rag_config.parse_method,
                 doc_id=doc_id,
                 display_stats=False,
+                # Use 'pipeline' backend for MinerU 2.7+ compatibility
+                # The default 'hybrid-auto-engine' outputs to 'hybrid_auto/' which
+                # RAGAnything's _read_output_files doesn't correctly handle
+                backend="pipeline",
             )
             self._documents_processed = True
             

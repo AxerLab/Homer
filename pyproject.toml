@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "aiofiles>=25.1.0",
+    "aiofiles>=22.0,<25.0",
     "colorlog>=6.9.0",
     "fastapi>=0.121.2",
     "httpx>=0.28.1",
@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "python-pptx>=1.0.2",
     "raganything>=1.2.8",
+    "mineru>=2.7.0",
     "sqlalchemy>=2.0.44",
     "tavily-python>=0.7.14",
     "uvicorn>=0.35.0",

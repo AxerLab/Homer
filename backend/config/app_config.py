@@ -12,3 +12,7 @@ MODEL = "moonshotai/kimi-k2-instruct-0905"
 CORRECTION_MODEL = "openai/gpt-oss-120b"
 
 model_provider = GroqProvider(api_key=GROQ_API_KEY, base_url="https://api.groq.com/")
+
+# Portkey Configuration (for RAG LLM with load balancing)
+PORTKEY_API_KEY = os.getenv("PORTKEY_API_KEY", "")
+PORTKEY_CONFIG_ID = os.getenv("PORTKEY_CONFIG_ID", "")
