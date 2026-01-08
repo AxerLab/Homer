@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight, Delete } from '@mui/icons-material'
+import { ChevronLeft, ChevronRight, Delete, Folder } from '@mui/icons-material'
 import { cn } from '@/lib/utils'
 import type { PastChat } from '@/types'
 
@@ -28,6 +28,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}>
         {isOpen && (
           <div className="flex flex-col h-full p-4">
+            <a
+              href="#/documents"
+              className="flex items-center gap-2 px-4 py-3 mb-4 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+            >
+              <Folder className="w-5 h-5" />
+              <span className="font-medium">Document Library</span>
+            </a>
+            
             <h2 className="text-lg font-semibold mb-4 text-text">Past Chats</h2>
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-2">

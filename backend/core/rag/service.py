@@ -1,7 +1,7 @@
 """RAG Service - Singleton wrapper around RAGAnything"""
 
 import asyncio
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass
@@ -30,9 +30,14 @@ class DocumentProcessingInfo:
     doc_id: str
     filename: str
     status: DocumentStatus = DocumentStatus.PENDING
+    progress: int = 0
+    progress_message: str = ""
     error: Optional[str] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    file_size_bytes: int = 0
+    file_extension: str = ""
+    file_path: Optional[str] = None
 
 
 class RAGService:
@@ -79,6 +84,58 @@ class RAGService:
                 self._document_status[doc_id].error = error
             if status in (DocumentStatus.COMPLETED, DocumentStatus.FAILED):
                 self._document_status[doc_id].completed_at = datetime.now()
+
+    def update_document_progress(
+        self,
+        doc_id: str,
+        progress: int,
+        message: str = ""
+    ) -> None:
+        if doc_id in self._document_status:
+            self._document_status[doc_id].progress = min(100, max(0, progress))
+            self._document_status[doc_id].progress_message = message
+
+    def list_documents(self) -> list:
+        return list(self._document_status.values())
+
+    def delete_document(self, doc_id: str) -> bool:
+        if doc_id not in self._document_status:
+            return False
+        
+        doc_info = self._document_status[doc_id]
+        
+        if doc_info.file_path:
+            try:
+                file_path = Path(doc_info.file_path)
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Deleted file: {file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete file {doc_info.file_path}: {e}")
+        
+        del self._document_status[doc_id]
+        logger.info(f"Removed document from registry: {doc_id}")
+        return True
+
+    def register_document_with_metadata(
+        self,
+        doc_id: str,
+        filename: str,
+        file_path: str,
+        file_size_bytes: int
+    ) -> DocumentProcessingInfo:
+        file_extension = Path(filename).suffix.lstrip('.').lower()
+        info = DocumentProcessingInfo(
+            doc_id=doc_id,
+            filename=filename,
+            status=DocumentStatus.PENDING,
+            started_at=datetime.now(),
+            file_path=file_path,
+            file_size_bytes=file_size_bytes,
+            file_extension=file_extension
+        )
+        self._document_status[doc_id] = info
+        return info
 
     @classmethod
     def _check_existing_data(cls) -> bool:
@@ -129,6 +186,7 @@ class RAGService:
         file_path: str,
         doc_id: Optional[str] = None,
         filename: Optional[str] = None,
+        on_progress: Optional[Callable[[int, str], None]] = None,
     ) -> Dict[str, Any]:
         """
         Process a document and add it to the knowledge base.
@@ -143,27 +201,34 @@ class RAGService:
         """
         rag = await self._ensure_initialized()
         
-        # Update status to processing
+        def emit_progress(progress: int, message: str) -> None:
+            if doc_id:
+                self.update_document_progress(doc_id, progress, message)
+            if on_progress:
+                on_progress(progress, message)
+        
         if doc_id and doc_id in self._document_status:
             self._update_document_status(doc_id, DocumentStatus.PROCESSING)
+            emit_progress(5, "Starting document processing")
 
         try:
+            emit_progress(10, "Parsing document")
+            
             await rag.process_document_complete(
                 file_path=file_path,
                 output_dir=str(rag_config.parser_output_dir),
                 parse_method=rag_config.parse_method,
                 doc_id=doc_id,
                 display_stats=False,
-                # Use 'pipeline' backend for MinerU 2.7+ compatibility
-                # The default 'hybrid-auto-engine' outputs to 'hybrid_auto/' which
-                # RAGAnything's _read_output_files doesn't correctly handle
                 backend="pipeline",
             )
+            
+            emit_progress(90, "Finalizing knowledge graph")
             self._documents_processed = True
             
-            # Update status to completed
             if doc_id:
                 self._update_document_status(doc_id, DocumentStatus.COMPLETED)
+                emit_progress(100, "Processing complete")
             
             logger.info(f"Document processed successfully: {file_path}")
             return {"success": True, "file_path": file_path, "doc_id": doc_id}
@@ -232,7 +297,7 @@ class RAGService:
             "parser": rag_config.parser,
             "embedding_model": rag_config.embedding_model,
             "embedding_dim": rag_config.embedding_dim,
-            "llm_model": rag_config.groq_model,
+            "llm_model": "portkey-multi-model",
             "initialized": self._initialized,
             "has_documents": self._documents_processed,
         }
