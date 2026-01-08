@@ -5,12 +5,27 @@ import { SlideCanvas } from './components/presentation/SlideCanvas'
 import { SlideContentPanel } from './components/presentation/SlideContentPanel'
 import { GenerateButton } from './components/presentation/GenerateButton'
 import { LoadingOverlay } from './components/ui/LoadingOverlay'
+import { DocumentLibrary } from './pages/DocumentLibrary'
 import { cn } from './lib/utils'
 import type { PastChat } from './types'
 import type { Presentation } from './types/api'
 import { presentationApi } from './services/api'
 
-function App() {
+function useHashRoute() {
+  const [route, setRoute] = useState(window.location.hash.slice(1) || '/')
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(window.location.hash.slice(1) || '/')
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  return route
+}
+
+function MainApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [selectedChatId, setSelectedChatId] = useState<string>()
   const [currentSlide, setCurrentSlide] = useState(1)
@@ -20,7 +35,6 @@ function App() {
   const [currentPresentation, setCurrentPresentation] = useState<Presentation | null>(null)
   const [pastChats, setPastChats] = useState<PastChat[]>([])
 
-  // Load presentations on mount and select the first one
   useEffect(() => {
     loadPresentations()
   }, [])
@@ -30,7 +44,6 @@ function App() {
       const presos = await presentationApi.getPresentations()
       setPresentations(presos)
 
-      // Convert presentations to past chats format
       const chats: PastChat[] = presos.map(p => ({
         id: p.id,
         title: p.main_topic,
@@ -38,10 +51,8 @@ function App() {
         presentationId: p.id
       }))
 
-      // Only show real presentations, no mock data
       setPastChats(chats)
 
-      // Auto-select the first presentation if available
       if (presos.length > 0) {
         const firstPresentation = presos[0]
         setSelectedChatId(firstPresentation.id)
@@ -52,21 +63,18 @@ function App() {
     }
   }
 
-  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX', theme?: string) => {
-    console.log('Generating presentation:', { prompt, format, theme })
+  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX', theme?: string, useRag: boolean = false) => {
+    console.log('Generating presentation:', { prompt, format, theme, useRag })
     setIsGenerating(true)
 
     try {
-      // Map TeX to pdf for API
       const fileType = format === 'TeX' ? 'pdf' : format.toLowerCase() as 'pptx' | 'pdf'
 
-      const presentation_id = await presentationApi.createPresentation(prompt, fileType, theme)
+      const presentation_id = await presentationApi.createPresentation(prompt, fileType, theme, useRag)
       const presentation = await presentationApi.getPresentation(presentation_id.id)
 
-      // Add to presentations list
       setPresentations(prev => [presentation, ...(prev || [])])
 
-      // Update past chats
       const newChat: PastChat = {
         id: presentation.id,
         title: prompt,
@@ -75,7 +83,6 @@ function App() {
       }
       setPastChats(prev => [newChat, ...prev.slice(0, 7)])
 
-      // Set as current presentation
       setCurrentPresentation(presentation)
       setSelectedChatId(presentation.id)
 
@@ -90,7 +97,6 @@ function App() {
   const handleChatSelect = async (chatId: string) => {
     setSelectedChatId(chatId)
 
-    // Check if it's a real presentation
     const chat = pastChats.find(c => c.id === chatId)
     if (chat?.presentationId) {
       try {
@@ -110,11 +116,9 @@ function App() {
     try {
       await presentationApi.deletePresentation(chatId)
 
-      // Remove from state
       setPresentations(prev => (prev || []).filter(p => p.id !== chatId))
       setPastChats(prev => prev.filter(c => c.id !== chatId))
 
-      // If we deleted the current presentation, clear selection
       if (selectedChatId === chatId) {
         setSelectedChatId(undefined)
         setCurrentPresentation(null)
@@ -131,7 +135,6 @@ function App() {
     setIsModifying(true)
     try {
       await presentationApi.updateSlide(currentPresentation.id, slideNumber, prompt)
-      // Refetch the updated presentation and update state to refresh the UI without a full page reload
       const updatedPresentation = await presentationApi.getPresentation(currentPresentation.id)
       setCurrentPresentation(updatedPresentation)
     } catch (error) {
@@ -191,13 +194,22 @@ function App() {
         isGenerating={isGenerating}
       />
 
-      {/* Loading overlay for generation */}
       <LoadingOverlay
         isVisible={isGenerating}
         message="Generating your presentation..."
       />
     </div>
   )
+}
+
+function App() {
+  const route = useHashRoute()
+
+  if (route === '/documents' || route === 'documents') {
+    return <DocumentLibrary />
+  }
+
+  return <MainApp />
 }
 
 export default App

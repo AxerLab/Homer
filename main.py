@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import json
 import uuid
@@ -31,7 +32,11 @@ from backend.core.rag.schemas import (
     RAGContextResponse,
     RAGDocumentCreate,
     RAGDocumentStatusResponse,
+    RAGDocumentResponse,
+    RAGDocumentList,
+    RAGDocumentDeleteResponse,
 )
+from backend.core.rag.sse import sse_manager, sse_event_generator, ProgressStage
 import logfire
 
 # Create tables
@@ -78,7 +83,7 @@ async def create_presentation(
 ):
     try:
         generated_presentation = await generate_presentation_with_rag(
-            presentation.main_topic, presentation.main_topic, use_rag=True
+            presentation.main_topic, presentation.main_topic, use_rag=presentation.use_rag
         )
 
         # Convert to JSON string for storage
@@ -351,7 +356,8 @@ async def upload_document(
     try:
         async with aiofiles.open(file_path, "wb") as f:
             content = await file.read()
-            if len(content) > rag_config.max_file_size:
+            file_size = len(content)
+            if file_size > rag_config.max_file_size:
                 raise HTTPException(status_code=400, detail="File too large (max 50MB)")
             await f.write(content)
     except HTTPException:
@@ -360,16 +366,29 @@ async def upload_document(
         logger.error(f"Failed to save uploaded file: {e}")
         raise HTTPException(status_code=500, detail="Failed to save file")
 
-    # Register document for status tracking
-    rag_service.register_document(doc_id, file.filename)
+    rag_service.register_document_with_metadata(
+        doc_id=doc_id,
+        filename=file.filename,
+        file_path=str(file_path),
+        file_size_bytes=file_size
+    )
 
     async def process_doc():
         try:
+            await sse_manager.send_progress(doc_id, 5, ProgressStage.PENDING, "Initializing RAG service")
             await rag_service.initialize()
+            
+            async def on_progress(progress: int, message: str):
+                stage = ProgressStage.PARSING if progress < 50 else ProgressStage.EMBEDDING if progress < 90 else ProgressStage.INDEXING
+                await sse_manager.send_progress(doc_id, progress, stage, message)
+            
+            await sse_manager.send_progress(doc_id, 10, ProgressStage.PARSING, "Starting document processing")
             await rag_service.process_document(str(file_path), doc_id=doc_id, filename=file.filename)
+            await sse_manager.send_progress(doc_id, 100, ProgressStage.COMPLETED, "Processing complete")
             logger.info(f"Document processed: {doc_id}")
         except Exception as e:
             logger.error(f"Background processing failed for {doc_id}: {e}")
+            await sse_manager.send_progress(doc_id, 0, ProgressStage.FAILED, "Processing failed", error=str(e))
 
     background_tasks.add_task(process_doc)
 
@@ -413,10 +432,6 @@ async def rag_status():
 
 @app.get("/api/v1/rag/document/{doc_id}/status", response_model=RAGDocumentStatusResponse)
 async def get_document_status(doc_id: str):
-    """
-    Get the processing status of an uploaded document.
-    Poll this endpoint to check when document processing is complete.
-    """
     doc_info = rag_service.get_document_status(doc_id)
     if doc_info is None:
         raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
@@ -425,7 +440,71 @@ async def get_document_status(doc_id: str):
         id=doc_info.doc_id,
         filename=doc_info.filename,
         status=doc_info.status.value,
+        progress=doc_info.progress,
+        progress_message=doc_info.progress_message,
         error=doc_info.error,
         started_at=doc_info.started_at.isoformat() if doc_info.started_at else None,
         completed_at=doc_info.completed_at.isoformat() if doc_info.completed_at else None,
+        file_size_bytes=doc_info.file_size_bytes,
+        file_extension=doc_info.file_extension,
+    )
+
+
+@app.get("/api/v1/rag/document/{doc_id}/progress")
+async def stream_document_progress(doc_id: str):
+    doc_info = rag_service.get_document_status(doc_id)
+    if doc_info is None:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+    
+    return StreamingResponse(
+        sse_event_generator(doc_id, sse_manager),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+@app.get("/api/v1/rag/documents", response_model=RAGDocumentList)
+async def list_documents():
+    documents = rag_service.list_documents()
+    return RAGDocumentList(
+        documents=[
+            RAGDocumentResponse(
+                id=doc.doc_id,
+                filename=doc.filename,
+                file_extension=doc.file_extension,
+                file_size_bytes=doc.file_size_bytes,
+                status=doc.status.value,
+                progress=doc.progress,
+                progress_message=doc.progress_message,
+                error=doc.error,
+                started_at=doc.started_at.isoformat() if doc.started_at else None,
+                completed_at=doc.completed_at.isoformat() if doc.completed_at else None,
+            )
+            for doc in documents
+        ],
+        total=len(documents)
+    )
+
+
+@app.delete("/api/v1/rag/document/{doc_id}", response_model=RAGDocumentDeleteResponse)
+async def delete_document(doc_id: str):
+    doc_info = rag_service.get_document_status(doc_id)
+    if doc_info is None:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+    
+    if doc_info.status == DocumentStatus.PROCESSING:
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete document while processing. Wait for completion."
+        )
+    
+    deleted = rag_service.delete_document(doc_id)
+    return RAGDocumentDeleteResponse(
+        id=doc_id,
+        deleted=deleted,
+        message="Document removed from library. Note: Content may remain in knowledge graph until server restart."
     )

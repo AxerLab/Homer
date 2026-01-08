@@ -13,16 +13,16 @@ class RAGDocumentCreate(BaseModel):
 
 
 class RAGDocumentResponse(BaseModel):
-    """Full document details"""
-
     id: str
     filename: str
-    file_type: str
-    file_size: int
+    file_extension: str
+    file_size_bytes: int
     status: Literal["pending", "processing", "completed", "failed"]
-    error_message: Optional[str] = None
-    created_at: str
-    processed_at: Optional[str] = None
+    progress: int = 0
+    progress_message: str = ""
+    error: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
 
 
 class RAGDocumentList(BaseModel):
@@ -65,13 +65,27 @@ class RAGContextResponse(BaseModel):
 
 
 class RAGDocumentStatusResponse(BaseModel):
-    """Response for document processing status check"""
+    id: str
+    filename: str
+    status: Literal["pending", "processing", "completed", "failed"]
+    progress: int = 0
+    progress_message: str = ""
+    error: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    file_size_bytes: int = 0
+    file_extension: str = ""
 
-    id: str = Field(..., description="Document UUID")
-    filename: str = Field(..., description="Original filename")
-    status: Literal["pending", "processing", "completed", "failed"] = Field(
-        ..., description="Current processing status"
-    )
-    error: Optional[str] = Field(None, description="Error message if failed")
-    started_at: Optional[str] = Field(None, description="When processing started")
-    completed_at: Optional[str] = Field(None, description="When processing completed")
+
+class RAGProgressEvent(BaseModel):
+    doc_id: str
+    progress: int
+    stage: str
+    message: str
+    error: Optional[str] = None
+
+
+class RAGDocumentDeleteResponse(BaseModel):
+    id: str
+    deleted: bool
+    message: str

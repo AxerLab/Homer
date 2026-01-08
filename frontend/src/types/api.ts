@@ -21,6 +21,7 @@ export type CreatePresentationRequest = {
   main_topic: string;
   file_type: 'pptx' | 'pdf';
   theme?: string;  // Optional theme selection
+  use_rag?: boolean;  // Whether to use RAG context from uploaded documents
 }
 
 export type CreatePresentationResponse = {
@@ -90,7 +91,30 @@ export type RAGDocumentStatus = {
   id: string;
   filename: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  progress_message: string;
   error: string | null;
   started_at: string | null;
   completed_at: string | null;
+  file_size_bytes: number;
+  file_extension: string;
+}
+
+export type RAGDocumentListResponse = {
+  documents: RAGDocumentStatus[];
+  total: number;
+}
+
+export type RAGProgressEvent = {
+  doc_id: string;
+  progress: number;
+  stage: 'pending' | 'parsing' | 'embedding' | 'indexing' | 'completed' | 'failed';
+  message: string;
+  error: string | null;
+}
+
+export type RAGDocumentDeleteResponse = {
+  id: string;
+  deleted: boolean;
+  message: string;
 }

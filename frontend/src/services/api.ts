@@ -8,7 +8,9 @@ import type {
   RAGContextRequest,
   RAGContextResponse,
   RAGStatus,
-  RAGDocumentStatus
+  RAGDocumentStatus,
+  RAGDocumentListResponse,
+  RAGDocumentDeleteResponse
 } from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -63,8 +65,8 @@ export const presentationApi = {
   },
 
   // Create a new presentation
-  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx', theme?: string): Promise<{ id: string }> {
-    console.log('Creating presentation:', { topic, fileType, theme });
+  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx', theme?: string, useRag: boolean = false): Promise<{ id: string }> {
+    console.log('Creating presentation:', { topic, fileType, theme, useRag });
 
     const response = await fetch(`${API_BASE_URL}/api/v1/presentations/`, {
       method: 'POST',
@@ -75,7 +77,8 @@ export const presentationApi = {
       body: JSON.stringify({
         main_topic: topic,
         file_type: fileType,
-        ...(theme && { theme })  // Only include theme if provided
+        use_rag: useRag,
+        ...(theme && { theme })
       } as CreatePresentationRequest),
     });
 
@@ -300,5 +303,27 @@ export const ragApi = {
     }
     
     throw new Error('Document processing timed out');
+  },
+
+  async listDocuments(): Promise<RAGDocumentListResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/documents`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    return handleResponse<RAGDocumentListResponse>(response);
+  },
+
+  async deleteDocument(docId: string): Promise<RAGDocumentDeleteResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/rag/document/${docId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    return handleResponse<RAGDocumentDeleteResponse>(response);
   },
 };

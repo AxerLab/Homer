@@ -7,6 +7,7 @@ class PresentationCreate(BaseModel):
     main_topic: str = Field(..., min_length=1, description="Main topic/prompt for presentation")
     file_type: Literal['pptx', 'pdf'] = Field(..., description="Type of file to generate")
     theme: Optional[str] = Field(None, description="Theme name for presentation (e.g., 'default', 'psychedelic_vibrant')")
+    use_rag: bool = Field(default=False, description="Whether to use RAG context from uploaded documents")
 
 class PresentationCreateResponse(BaseModel):
     """Response with UUID after creation"""

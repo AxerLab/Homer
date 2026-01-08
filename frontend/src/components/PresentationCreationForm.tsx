@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { presentationApi } from '@/services/api';
-import { DocumentUpload } from '@/components/rag/DocumentUpload';
+import { Close } from '@mui/icons-material';
+import { presentationApi, ragApi } from '@/services/api';
+import { DocumentAttachSelector } from '@/components/rag/DocumentAttachSelector';
+import type { RAGDocumentStatus } from '@/types/api';
 
 interface PresentationCreationFormProps {
   onPresentationCreated?: (presentationId: string) => void;
 }
 
-type FormStage = 'idle' | 'document_processing' | 'generating';
+type FormStage = 'idle' | 'generating';
 
 export const PresentationCreationForm: React.FC<
   PresentationCreationFormProps
@@ -16,10 +18,30 @@ export const PresentationCreationForm: React.FC<
   const [topic, setTopic] = useState('');
   const [fileType, setFileType] = useState<'pptx' | 'pdf'>('pptx');
   const [theme, setTheme] = useState<string>('default');
-  const [documentReady, setDocumentReady] = useState<boolean>(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [attachedDocs, setAttachedDocs] = useState<RAGDocumentStatus[]>([]);
   const [formStage, setFormStage] = useState<FormStage>('idle');
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const handleSelectionChange = async (docIds: string[]) => {
+    setSelectedDocIds(docIds);
+    if (docIds.length > 0) {
+      try {
+        const response = await ragApi.listDocuments();
+        setAttachedDocs(response.documents.filter(doc => docIds.includes(doc.id)));
+      } catch (err) {
+        console.error('Failed to fetch document details:', err);
+      }
+    } else {
+      setAttachedDocs([]);
+    }
+  };
+
+  const removeAttachedDoc = (docId: string) => {
+    setSelectedDocIds(prev => prev.filter(id => id !== docId));
+    setAttachedDocs(prev => prev.filter(doc => doc.id !== docId));
+  };
 
   const mutation = useMutation({
     mutationFn: () => presentationApi.createPresentation(topic, fileType, theme),
@@ -47,20 +69,6 @@ export const PresentationCreationForm: React.FC<
     mutation.mutate();
   };
 
-  const handleDocumentProcessingComplete = (_docId: string, _filename: string) => {
-    setDocumentReady(true);
-    setFormStage('idle');
-  };
-
-  const handleDocumentUploadStart = () => {
-    setFormStage('document_processing');
-    setDocumentReady(false);
-  };
-
-  const handleDocumentClear = () => {
-    setDocumentReady(false);
-  };
-
   const isProcessing = formStage !== 'idle';
 
   return (
@@ -81,22 +89,31 @@ export const PresentationCreationForm: React.FC<
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Context Document <span className="text-text-muted">(optional)</span>
+        <label className="block text-sm font-medium mb-2">
+          Context Documents <span className="text-text-muted">(optional)</span>
         </label>
-        <DocumentUpload
-          onUploadComplete={handleDocumentUploadStart}
-          onProcessingComplete={handleDocumentProcessingComplete}
-          onProcessingError={() => setFormStage('idle')}
-          onUploadError={() => setFormStage('idle')}
-          onClear={handleDocumentClear}
-          waitForProcessing={true}
-          className="w-full"
+        <DocumentAttachSelector
+          selectedDocIds={selectedDocIds}
+          onSelectionChange={handleSelectionChange}
         />
-        {documentReady && (
-          <p className="text-xs text-accent mt-1">
-            Document indexed and ready for context retrieval
-          </p>
+        {attachedDocs.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {attachedDocs.map(doc => (
+              <span
+                key={doc.id}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-[#6366f1]/20 text-[#6366f1] text-xs rounded-full"
+              >
+                {doc.filename}
+                <button
+                  type="button"
+                  onClick={() => removeAttachedDoc(doc.id)}
+                  className="hover:text-white transition-colors"
+                >
+                  <Close className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -162,11 +179,9 @@ export const PresentationCreationForm: React.FC<
         className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary disabled:opacity-50"
         disabled={isProcessing || !topic.trim()}
       >
-        {formStage === 'document_processing' 
-          ? 'Processing document...' 
-          : formStage === 'generating' 
-            ? 'Generating presentation...' 
-            : 'Generate Presentation'}
+        {formStage === 'generating' 
+          ? 'Generating presentation...' 
+          : 'Generate Presentation'}
       </button>
     </form>
   );
