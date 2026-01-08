@@ -119,7 +119,7 @@ async def _generate_presentation_impl(
 
             # For ModelHTTPError, check status_code and body
             if isinstance(e, ModelHTTPError):
-                logger.error(f"ModelHTTPError encountered: {error_msg[:200]}...")
+                logger.warning(f"ModelHTTPError encountered: {error_msg[:200]}...")
                 if e.status_code == 400 and isinstance(e.body, dict):
                     error_dict = e.body.get("error", {})
                     if isinstance(error_dict, dict):
