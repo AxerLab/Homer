@@ -49,8 +49,12 @@ class SlidePresentation(BaseModel):
         for i in range(1, len(self.slides)):
             prev_layout = self.slides[i - 1].layout
             curr_layout = self.slides[i].layout
-            # Count image slides
+            curr_slide = self.slides[i]
+            
+            # Count image slides (picture_with_caption OR two_content with image)
             if curr_layout == SlideLayout.PICTURE_WITH_CAPTION:
+                image_slides += 1
+            elif curr_layout == SlideLayout.TWO_CONTENT and curr_slide.image:
                 image_slides += 1
 
             # Avoid consecutive title_only slides
@@ -61,7 +65,7 @@ class SlidePresentation(BaseModel):
         
         # Ensure at least one image slide
         if image_slides == 0:
-            raise ValueError("Presentation must contain at least one picture_with_caption slide")
+            raise ValueError("Presentation must contain at least one slide with an image (picture_with_caption or two_content with image)")
 
         return self
 

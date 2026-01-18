@@ -6,6 +6,72 @@ from ..rag.service import rag_service
 from pydantic_ai import ModelHTTPError, UnexpectedModelBehavior, capture_run_messages
 from pydantic_ai.messages import ModelResponse, ToolCallPart, TextPart
 import json
+import toons  # type: ignore[import-untyped]
+
+
+MAX_RETRY_PROMPT_CHARS = 6000
+MAX_PREVIOUS_ATTEMPT_CHARS = 5000
+
+
+def _is_token_limit_error(exception: Exception) -> bool:
+    """Check if the exception is a token/rate limit error (413 or similar)."""
+    if isinstance(exception, ModelHTTPError):
+        if exception.status_code == 413:
+            return True
+        if isinstance(exception.body, dict):
+            error_info = exception.body.get("error", {})
+            if isinstance(error_info, dict):
+                error_code = error_info.get("code", "")
+                error_msg = error_info.get("message", "")
+                if error_code == "rate_limit_exceeded" or "tokens" in error_code:
+                    return True
+                if "too large" in error_msg.lower() or "token" in error_msg.lower():
+                    return True
+    error_str = str(exception).lower()
+    return "token" in error_str and ("limit" in error_str or "too large" in error_str)
+
+
+def _build_retry_prompt_for_attempt(
+    failed_attempt_json: str,
+    error_msg: str,
+    original_prompt: str,
+    attempt: int,
+) -> str:
+    """
+    Build retry prompt with progressively reduced content based on attempt number.
+    Priority: Keep failed attempt content, reduce/drop original prompt and error details.
+    Uses TOON format to reduce token count.
+    """
+    try:
+        parsed = json.loads(failed_attempt_json) if isinstance(failed_attempt_json, str) else failed_attempt_json
+        toon_attempt = toons.dumps(parsed) # type: ignore
+    except (json.JSONDecodeError, TypeError, Exception):
+        toon_attempt = failed_attempt_json
+    
+    if attempt == 0:
+        # First attempt: full content, no truncation
+        return (
+            f"Original prompt: {original_prompt}\n\n"
+            f"Validation error: {error_msg[:300]}\n\n"
+            f"Fix this presentation (TOON format) to pass validation:\n{toon_attempt}\n\n"
+            "Keep the content but fix the validation errors. Return valid JSON."
+        )
+    elif attempt == 1:
+        truncated_attempt = toon_attempt[:MAX_PREVIOUS_ATTEMPT_CHARS]
+        if len(toon_attempt) > MAX_PREVIOUS_ATTEMPT_CHARS:
+            truncated_attempt += "\n..."
+        return (
+            f"Fix this presentation (TOON format):\n{truncated_attempt}\n\n"
+            "The above failed validation. Fix the errors and return valid JSON."
+        )
+    else:
+        truncated_attempt = toon_attempt[:3000]
+        if len(toon_attempt) > 3000:
+            truncated_attempt += "\n..."
+        return (
+            f"Fix this:\n{truncated_attempt}\n\n"
+            "Return valid presentation JSON."
+        )
 
 
 def extract_unvalidated_output(messages: list) -> dict:
@@ -93,7 +159,6 @@ async def generate_presentation_async(
 async def _generate_presentation_impl(
     original_prompt: str, user_prompt: str, use_async: bool = False
 ) -> SlidePresentation:
-    # Use original_prompt as the key if user_prompt is not provided
     prompt_key = user_prompt
 
     logger.debug(f"Generating presentation for prompt: {original_prompt}")
@@ -101,6 +166,8 @@ async def _generate_presentation_impl(
     agent_result = None
     retry_prompt = original_prompt
     is_schema_error = False
+    failed_attempt_json = ""
+    error_msg = ""
 
     with capture_run_messages() as messages:
         try:
@@ -155,18 +222,25 @@ async def _generate_presentation_impl(
                         f"Model text responses: {raw_content['text_responses']}"
                     )
 
-                # Build retry prompt with the unvalidated content
+                # Store the failed attempt JSON for retry prompts
+                failed_attempt_json = ""
+                if raw_content["final_result_args"]:
+                    failed_attempt_json = json.dumps(raw_content["final_result_args"])
+
+                # Build initial retry prompt
                 retry_prompt = (
                     f"Original prompt: {original_prompt}\n\n"
                     + "Your previous attempt failed validation with this error:\n"
                     + f"{error_msg}\n\n"
                 )
 
-                # Include the attempted output if available
-                if raw_content["final_result_args"]:
+                if failed_attempt_json:
+                    truncated = failed_attempt_json[:MAX_PREVIOUS_ATTEMPT_CHARS]
+                    if len(failed_attempt_json) > MAX_PREVIOUS_ATTEMPT_CHARS:
+                        truncated += "..."
                     retry_prompt += (
                         "You previously attempted to generate:\n"
-                        + f"{json.dumps(raw_content['final_result_args'], indent=2)}\n\n"
+                        + f"{truncated}\n\n"
                         + "Keep the content but fix the validation errors.\n"
                     )
 
@@ -189,28 +263,42 @@ async def _generate_presentation_impl(
 
     if is_schema_error:
         attempts = 3
+        current_retry_prompt = retry_prompt
+        use_message_history = True
+        
         for attempt in range(attempts):
             try:
                 logger.debug(
                     f"Retrying with correction agent, attempt {attempt + 1} of {attempts}"
                 )
+                
+                history = global_memory.get_history(user_prompt=prompt_key) if use_message_history else None
+                
                 if use_async:
                     agent_result = await correction_agent.run(
-                        retry_prompt,
-                        message_history=global_memory.get_history(
-                            user_prompt=prompt_key
-                        ),
+                        current_retry_prompt,
+                        message_history=history,
                     )
                 else:
                     agent_result = correction_agent.run_sync(
-                        retry_prompt,
-                        message_history=global_memory.get_history(
-                            user_prompt=prompt_key
-                        ),
+                        current_retry_prompt,
+                        message_history=history,
                     )
-                break  # Exit loop if successful
+                break
             except Exception as e:
                 logger.error(f"Error during correction attempt {attempt + 1}: {e}")
+                
+                if _is_token_limit_error(e):
+                    logger.warning("Token limit exceeded, reducing prompt size for next attempt")
+                    use_message_history = False
+                    current_retry_prompt = _build_retry_prompt_for_attempt(
+                        failed_attempt_json,
+                        error_msg,
+                        original_prompt,
+                        attempt + 1,
+                    )
+                    logger.debug(f"Strategy for attempt {attempt + 2}: prompt length={len(current_retry_prompt)}, no history")
+                
                 continue
 
     if agent_result is None:

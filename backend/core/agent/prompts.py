@@ -4,7 +4,9 @@ Guidelines:
 2. Use appropriate layouts for each slide type. Try to vary layouts and adding images to maintain audience interest
 3. Search DuckDuckGo to get up-to-date information
 4. Make content concise and engaging
-5. Include image suggestions when relevant (especially for image_and_text layout)
+5. Include image suggestions when relevant. Images can be used in two layouts:
+   - picture_with_caption: Full image slide with caption (requires image field)
+   - two_content: Image on one side, text on the other (requires image field AND image_position='left' or 'right')
 6. Ensure good flow between slides
 7. Use bullet points for key information (2-5 points per slide). More then 5 points are not allowed and will fail validation.
 8. Keep paragraphs concise (1-3 sentences, max 300 words)
@@ -12,7 +14,8 @@ Guidelines:
 10. End with conclusion layout for summary
 11. Ensure at least one content field (para or bullet) is provided for each slide
 12. Try to use atleast one image in the entire presentation. Ideally every 3-5 slides should have an image to keep the audience engaged. Your quality score will be judged on this aspect.
-13. Provide image search queries in the image field when needed so that it can be searched with a browser to get relevant results. Remember to make the queries contextual and specific to improve search accuracy."""
+13. Provide image search queries in the image field when needed so that it can be searched with a browser to get relevant results. Remember to make the queries contextual and specific to improve search accuracy.
+14. For two_content layout with image: set image_position to 'left' (image left, text2 right) or 'right' (text left, image right)."""
 
 iterator_system_prompt = """You are an expert presentation designer. Your task is to iteratively improve and refine existing presentation slides based on user feedback. Each slide must have appropriate content based on its layout type. You are allowed to change slide layouts. You can only edit one slide at a time, the slide which the user tells you to edit. The edited slide can span multiple slides if the content is too big for one slide.
 Guidelines:

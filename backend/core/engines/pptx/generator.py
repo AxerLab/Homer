@@ -2,9 +2,11 @@ from pptx import Presentation
 from pptx.shapes.base import BaseShape
 from pptx.text.text import TextFrame
 from pptx.shapes.placeholder import PicturePlaceholder
+from pptx.util import Inches
 from ...models.content.textcontent.textcontent import TextContent
 from ...models.content.textcontent.comparison import Comparison, BulletList
 from ....config.logs import logger
+from typing import Literal
 import requests
 from io import BytesIO
 from urllib.parse import urlparse
@@ -63,18 +65,19 @@ class PPTXGenerator:
                 logger.warning(f"Cannot set text: placeholder={placeholder}, text={text}")
 
     def _set_placeholder_picture(
-        self, placeholder: BaseShape | None, image_path: str | list[str] | None
+        self, placeholder: BaseShape | None, image_path: str | list[str] | None, slide=None
     ) -> None:
         """
-        Safely insert a picture into a picture placeholder.
+        Safely insert a picture into a placeholder or at placeholder position.
         
         Args:
             placeholder: The placeholder shape to insert the picture into
             image_path: Path to the image file, URL to insert, or list of URLs to try with fallback
+            slide: The slide object (required for non-PicturePlaceholder placeholders)
             
         Note:
-            The placeholder reference becomes invalid after calling insert_picture(),
-            so this method should be called last when working with a placeholder.
+            For PicturePlaceholder: uses insert_picture() method
+            For other placeholders: adds picture as shape at placeholder's position and removes placeholder
             If image_path is a URL, it will be downloaded to a BytesIO object.
             If image_path is a list, URLs will be tried in order until one succeeds.
         """
@@ -88,27 +91,39 @@ class PPTXGenerator:
         for i, url in enumerate(urls_to_try, 1):
             logger.debug(f"Attempting to insert image from URL {i}/{len(urls_to_try)}: {url[:100]}...")
             try:
-                if isinstance(placeholder, PicturePlaceholder):
-                    # Check if image_path is a URL
-                    parsed = urlparse(url)
-                    if parsed.scheme in ('http', 'https'):
-                        # Download the image from URL
-                        logger.debug(f"Downloading image from URL: {parsed.scheme}://{parsed.netloc}...")
-                        response = requests.get(url, timeout=10)
-                        response.raise_for_status()
-                        image_file = BytesIO(response.content)
-                        logger.debug(f"Downloaded {len(response.content)} bytes, inserting into placeholder")
-                        placeholder.insert_picture(image_file)
-                        logger.debug("✓ Successfully inserted image into placeholder")
-                        return  # Success! Exit the function
-                    else:
-                        # Local file path
-                        logger.debug(f"Inserting local image file: {url}")
-                        placeholder.insert_picture(url)
-                        logger.debug("✓ Successfully inserted local image into placeholder")
-                        return  # Success! Exit the function
+                # Download image if URL
+                parsed = urlparse(url)
+                if parsed.scheme in ('http', 'https'):
+                    logger.debug(f"Downloading image from URL: {parsed.scheme}://{parsed.netloc}...")
+                    response = requests.get(url, timeout=10)
+                    response.raise_for_status()
+                    image_file = BytesIO(response.content)
+                    logger.debug(f"Downloaded {len(response.content)} bytes")
                 else:
-                    logger.error(f"Placeholder is not a PicturePlaceholder, type: {type(placeholder)}")
+                    image_file = url  # type: ignore  # Local file path
+                
+                if isinstance(placeholder, PicturePlaceholder):
+                    # Use native insert_picture for PicturePlaceholder
+                    placeholder.insert_picture(image_file)
+                    logger.debug("✓ Successfully inserted image into PicturePlaceholder")
+                    return
+                elif slide is not None:
+                    # For regular placeholders, add picture as shape at placeholder position
+                    left = placeholder.left
+                    top = placeholder.top
+                    width = placeholder.width
+                    height = placeholder.height
+                    
+                    # Remove the placeholder text box
+                    sp = placeholder._element
+                    sp.getparent().remove(sp)
+                    
+                    # Add picture at the placeholder's position
+                    slide.shapes.add_picture(image_file, left, top, width=width, height=height)
+                    logger.debug("✓ Successfully added image as shape at placeholder position")
+                    return
+                else:
+                    logger.error(f"Placeholder is not a PicturePlaceholder and no slide provided, type: {type(placeholder)}")
                     return
             except Exception as e:
                 # Log the error and try next URL if available
@@ -168,6 +183,31 @@ class PPTXGenerator:
         self._set_placeholder_text(title_placeholder, title)
         self._set_placeholder_text(content1_placeholder, content1)
         self._set_placeholder_text(content2_placeholder, content2)
+
+    def two_content_with_image_slide(
+        self,
+        title: str,
+        image_path: str | list[str],
+        text_content: TextContent,
+        image_position: Literal["left", "right"],
+    ):
+        """
+        Add a two content slide with image on one side and text on the other.
+        """
+        slide_layout = self.prs.slide_layouts[self.layouts_indices["two_content"]]
+        slide = self.prs.slides.add_slide(slide_layout)
+        title_placeholder = slide.shapes.title
+        left_placeholder = slide.placeholders[1]
+        right_placeholder = slide.placeholders[2]
+        
+        self._set_placeholder_text(title_placeholder, title)
+        
+        if image_position == "left":
+            self._set_placeholder_text(right_placeholder, text_content)
+            self._set_placeholder_picture(left_placeholder, image_path, slide=slide)
+        else:
+            self._set_placeholder_text(left_placeholder, text_content)
+            self._set_placeholder_picture(right_placeholder, image_path, slide=slide)
 
     def comparison_slide(
         self,
@@ -240,7 +280,7 @@ class PPTXGenerator:
         self._set_placeholder_text(title_placeholder, title)
         self._set_placeholder_text(caption_placeholder, caption)
         # Add image last since insert_picture invalidates the placeholder reference
-        self._set_placeholder_picture(image_placeholder, image_path)
+        self._set_placeholder_picture(image_placeholder, image_path, slide=slide)
 
     def save(self, file_path: str):
         self.prs.save(file_path)

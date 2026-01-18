@@ -154,12 +154,40 @@ async def generate_tex_and_pdf(
         elif slide.layout == SlideLayout.TWO_CONTENT:
             doc.append(NoEscape(r"\begin{columns}[T]"))
             doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
-            if slide.content.text:
+            
+            if slide.image and slide.image_position == "left":
+                local_image_path = await handle_image_for_latex(slide.image, output_dir)
+                if local_image_path:
+                    image_files.append(local_image_path)
+                    image_filename = Path(local_image_path).name
+                    doc.append(NoEscape(r"\begin{center}"))
+                    doc.append(
+                        NoEscape(
+                            f"\\includegraphics[width=0.9\\textwidth]{{{image_filename}}}"
+                        )
+                    )
+                    doc.append(NoEscape(r"\end{center}"))
+            elif slide.content.text:
                 doc.append(NoEscape(content_to_latex(slide.content.text)))
+            
             doc.append(NoEscape(r"\end{column}"))
             doc.append(NoEscape(r"\begin{column}{.5\textwidth}"))
-            if slide.content.text2:
+            
+            if slide.image and slide.image_position == "right":
+                local_image_path = await handle_image_for_latex(slide.image, output_dir)
+                if local_image_path:
+                    image_files.append(local_image_path)
+                    image_filename = Path(local_image_path).name
+                    doc.append(NoEscape(r"\begin{center}"))
+                    doc.append(
+                        NoEscape(
+                            f"\\includegraphics[width=0.9\\textwidth]{{{image_filename}}}"
+                        )
+                    )
+                    doc.append(NoEscape(r"\end{center}"))
+            elif slide.content.text2:
                 doc.append(NoEscape(content_to_latex(slide.content.text2)))
+            
             doc.append(NoEscape(r"\end{column}"))
             doc.append(NoEscape(r"\end{columns}"))
 

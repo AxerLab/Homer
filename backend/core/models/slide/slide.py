@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
@@ -20,8 +20,12 @@ class Slide(BaseModel):
     )
     image: Optional[str] = Field(
         None,
-        description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.",
+        description="Optional image search query. Enter the search query here in detail to improve search results. Use with picture_with_caption layout OR two_content layout (with image_position).",
         max_length=500,
+    )
+    image_position: Optional[Literal["left", "right"]] = Field(
+        None,
+        description="For two_content layout only: specifies which column the image appears in. 'left' replaces text content, 'right' replaces text2 content. Required when using image with two_content layout.",
     )
 
     # conflicts with blank layout
@@ -133,11 +137,40 @@ class Slide(BaseModel):
                 )
 
         if self.layout == SlideLayout.TWO_CONTENT:
-            if not self.content.text or not self.content.text2:
-                raise ValueError(
-                    f"Slides with layout '{self.layout}' must have both 'text' and "
-                    "'text2' content"
-                )
+            if self.image:
+                # Image mode: one side has image, other side has text
+                if not self.image_position:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' and image must specify "
+                        "'image_position' ('left' or 'right')"
+                    )
+                if self.image_position == "left":
+                    # Image on left, text2 required on right
+                    if not self.content.text2:
+                        raise ValueError(
+                            f"Slides with layout '{self.layout}' and image on left "
+                            "must have 'text2' content for right side"
+                        )
+                elif self.image_position == "right":
+                    # Image on right, text required on left
+                    if not self.content.text:
+                        raise ValueError(
+                            f"Slides with layout '{self.layout}' and image on right "
+                            "must have 'text' content for left side"
+                        )
+            else:
+                # Text-only mode (original behavior)
+                if not self.content.text or not self.content.text2:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' must have both 'text' and "
+                        "'text2' content, or use image with image_position"
+                    )
+                # Ensure image_position is not set without image
+                if self.image_position:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' cannot have 'image_position' "
+                        "without an 'image' search query"
+                    )
 
         if self.layout == SlideLayout.CONTENT_WITH_CAPTION:
             if not self.content.text or not self.content.text2:
