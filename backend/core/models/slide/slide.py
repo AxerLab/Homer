@@ -1,7 +1,36 @@
-from typing import Optional
+from typing import Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
+
+
+LAYOUT_CONTENT_LIMITS: Dict[SlideLayout, Dict[str, Any]] = {
+    SlideLayout.TITLE_AND_CONTENT: {
+        "max_bullet_length": 80,
+        "max_bullets": 5,
+        "max_para_length": 200,
+    },
+    SlideLayout.PICTURE_WITH_CAPTION: {
+        "max_bullet_length": None,
+        "max_bullets": 0,
+        "max_para_length": 120,
+    },
+    SlideLayout.TWO_CONTENT: {
+        "max_bullet_length": 60,
+        "max_bullets": 4,
+        "max_para_length": 150,
+    },
+    SlideLayout.COMPARISON: {
+        "max_bullet_length": 50,
+        "max_bullets": 4,
+        "max_para_length": None,
+    },
+    SlideLayout.CONTENT_WITH_CAPTION: {
+        "max_bullet_length": 60,
+        "max_bullets": 4,
+        "max_para_length": 150,
+    },
+}
 
 
 class Slide(BaseModel):
@@ -20,8 +49,12 @@ class Slide(BaseModel):
     )
     image: Optional[str] = Field(
         None,
-        description="Optional image search query. Enter the search query here in detail to improve search results. Use only with picture_with_caption layout. No other layouts permit image.",
+        description="Optional image search query. Enter the search query here in detail to improve search results. Use with picture_with_caption layout OR two_content layout (with image_position).",
         max_length=500,
+    )
+    image_position: Optional[Literal["left", "right"]] = Field(
+        None,
+        description="For two_content layout only: specifies which column the image appears in. 'left' replaces text content, 'right' replaces text2 content. Required when using image with two_content layout.",
     )
 
     # conflicts with blank layout
@@ -133,11 +166,40 @@ class Slide(BaseModel):
                 )
 
         if self.layout == SlideLayout.TWO_CONTENT:
-            if not self.content.text or not self.content.text2:
-                raise ValueError(
-                    f"Slides with layout '{self.layout}' must have both 'text' and "
-                    "'text2' content"
-                )
+            if self.image:
+                # Image mode: one side has image, other side has text
+                if not self.image_position:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' and image must specify "
+                        "'image_position' ('left' or 'right')"
+                    )
+                if self.image_position == "left":
+                    # Image on left, text2 required on right
+                    if not self.content.text2:
+                        raise ValueError(
+                            f"Slides with layout '{self.layout}' and image on left "
+                            "must have 'text2' content for right side"
+                        )
+                elif self.image_position == "right":
+                    # Image on right, text required on left
+                    if not self.content.text:
+                        raise ValueError(
+                            f"Slides with layout '{self.layout}' and image on right "
+                            "must have 'text' content for left side"
+                        )
+            else:
+                # Text-only mode (original behavior)
+                if not self.content.text or not self.content.text2:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' must have both 'text' and "
+                        "'text2' content, or use image with image_position"
+                    )
+                # Ensure image_position is not set without image
+                if self.image_position:
+                    raise ValueError(
+                        f"Slides with layout '{self.layout}' cannot have 'image_position' "
+                        "without an 'image' search query"
+                    )
 
         if self.layout == SlideLayout.CONTENT_WITH_CAPTION:
             if not self.content.text or not self.content.text2:
@@ -161,7 +223,48 @@ class Slide(BaseModel):
                     "as caption and not bullet points"
                 )
 
+        self._validate_layout_content_limits()
+
         return self
+
+    def _validate_layout_content_limits(self) -> None:
+        """Validate content against layout-specific length limits."""
+        limits = LAYOUT_CONTENT_LIMITS.get(self.layout)
+        if not limits or not self.content:
+            return
+
+        for text_content in [self.content.text, self.content.text2]:
+            if text_content is None:
+                continue
+
+            max_bullets = limits.get("max_bullets", 5)
+            max_bullet_len = limits.get("max_bullet_length")
+            max_para_len = limits.get("max_para_length")
+
+            if text_content.bullet:
+                if max_bullets == 0:
+                    raise ValueError(
+                        f"Bullets not allowed for {self.layout.value} layout"
+                    )
+                if len(text_content.bullet) > max_bullets:
+                    raise ValueError(
+                        f"Too many bullets for {self.layout.value}: "
+                        f"{len(text_content.bullet)} (max {max_bullets})"
+                    )
+                if max_bullet_len:
+                    for i, bullet in enumerate(text_content.bullet):
+                        if len(bullet) > max_bullet_len:
+                            raise ValueError(
+                                f"Bullet {i+1} too long for {self.layout.value}: "
+                                f"{len(bullet)} chars (max {max_bullet_len})"
+                            )
+
+            if text_content.para and max_para_len:
+                if len(text_content.para) > max_para_len:
+                    raise ValueError(
+                        f"Paragraph too long for {self.layout.value}: "
+                        f"{len(text_content.para)} chars (max {max_para_len})"
+                    )
 
     @field_validator("image")
     @classmethod

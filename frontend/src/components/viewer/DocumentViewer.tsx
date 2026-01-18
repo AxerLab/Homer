@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { Presentation } from '@/types/api';
 import { getFileUrl } from '@/utils/fileUrls';
@@ -14,22 +14,36 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 interface DocumentViewerProps {
   presentation: Presentation;
   fileType?: 'pptx' | 'pdf';
+  refreshKey?: number;
 }
 
-export const DocumentViewer: React.FC<DocumentViewerProps> = ({ presentation, fileType = 'pdf' }) => {
+export const DocumentViewer: React.FC<DocumentViewerProps> = ({ presentation, fileType = 'pdf', refreshKey }) => {
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const [documentKey, setDocumentKey] = useState(refreshKey || Date.now());
+
+  // Reset state and force remount when refreshKey changes
+  useEffect(() => {
+    if (refreshKey) {
+      setNumPages(null);
+      setPageNumber(1);
+      setError(null);
+      setDocumentKey(refreshKey);
+    }
+  }, [refreshKey]);
+
   // Debug logging
   console.log('DocumentViewer rendered with:', {
     presentationId: presentation.id,
     fileType: fileType,
-    presentationData: presentation
+    refreshKey: refreshKey,
+    documentKey: documentKey
   });
 
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [error, setError] = useState<string | null>(null);
-
   // Get file URL using utility (handles both production CDN and local development)
-  const fileUrl = getFileUrl(presentation, fileType);
+  const baseFileUrl = getFileUrl(presentation, fileType);
+  const fileUrl = baseFileUrl ? `${baseFileUrl}?t=${documentKey}` : null;
   console.log('Generated fileUrl:', fileUrl, 'for fileType:', fileType);
 
   if (!fileUrl) {
@@ -89,6 +103,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ presentation, fi
             ) : (
               <>
                 <Document
+                  key={documentKey}
                   file={fileUrl}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={onDocumentLoadError}

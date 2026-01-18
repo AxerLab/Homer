@@ -3,8 +3,13 @@ from typing import Optional, List
 from pydantic import conlist
 
 
+# Content length limits to prevent text overflow in slides
 MAX_BULLET_POINTS = 5
-MAX_PARAGRAPH_LENGTH = 1000
+MAX_BULLET_LENGTH = 80  # ~1 line at 18pt font in standard layouts
+MAX_BULLET_LENGTH_COMPACT = 60  # For split/caption layouts (two_content, etc.)
+MAX_PARAGRAPH_LENGTH = 200  # Reduced from 1000 to fit slide constraints
+MAX_PARAGRAPH_LENGTH_CAPTION = 120  # For picture_with_caption layout
+
 BulletList = conlist(str, min_length=0, max_length=MAX_BULLET_POINTS)
 class TextContent(BaseModel):
     para: Optional[str] = Field(
@@ -37,9 +42,14 @@ class TextContent(BaseModel):
                 raise ValueError("Bullet points must be a list")
             if len(v) > MAX_BULLET_POINTS:
                 raise ValueError(f"Too many bullet points (max {MAX_BULLET_POINTS})")
-            for item in v:
+            for i, item in enumerate(v):
                 if not isinstance(item, str) or len(item.strip()) == 0:
                     raise ValueError("Each bullet point must be a non-empty string")
+                if len(item) > MAX_BULLET_LENGTH:
+                    raise ValueError(
+                        f"Bullet {i+1} exceeds {MAX_BULLET_LENGTH} chars "
+                        f"({len(item)} chars): '{item[:40]}...'"
+                    )
         return v
 
     @field_validator("para")
@@ -52,5 +62,7 @@ class TextContent(BaseModel):
             if len(v.strip()) == 0:
                 raise ValueError("Paragraph cannot be empty")
             if len(v) > MAX_PARAGRAPH_LENGTH:
-                raise ValueError(f"Paragraph too long (max {MAX_PARAGRAPH_LENGTH} characters)")
+                raise ValueError(
+                    f"Paragraph exceeds {MAX_PARAGRAPH_LENGTH} chars ({len(v)} chars)"
+                )
         return v

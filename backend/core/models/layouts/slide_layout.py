@@ -12,7 +12,7 @@ class SlideLayout(str, Enum):
     SECTION_HEADER = (
         "section_header"  # Section break slide with title for transitioning between topics
     )
-    TWO_CONTENT = "two_content"  # Two side-by-side content areas with bullet points or text
+    TWO_CONTENT = "two_content"  # Two side-by-side content areas; supports text in both columns OR image in one column with text in the other
     COMPARISON = "comparison"  # Side-by-side comparison with titles for each content area
     TITLE_ONLY = "title_only"  # Clean slide with only a centered title
     BLANK = "blank"  # Empty slide with no predefined content areas
@@ -28,7 +28,7 @@ class SlideLayout(str, Enum):
             cls.TITLE.value: "Presentation title slide with main title and subtitle",
             cls.TITLE_AND_CONTENT.value: "Standard layout with title and content area for text or media",
             cls.SECTION_HEADER.value: "Section break slide with title for transitioning between topics. Must have title and paragraph text only.",
-            cls.TWO_CONTENT.value: "Two side-by-side content areas with bullet points or text",
+            cls.TWO_CONTENT.value: "Two side-by-side content areas. Can have text in both columns, OR an image in one column (specify with image_position='left' or 'right') with text in the other",
             cls.COMPARISON.value: "Side-by-side comparison with titles for each content area",
             cls.TITLE_ONLY.value: "Clean slide with only a centered title. Must not have any other content.",
             cls.BLANK.value: "Empty slide with no predefined content areas. Cannot have title, text, bullet or any form of content.",
