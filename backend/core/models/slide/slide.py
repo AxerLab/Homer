@@ -1,7 +1,36 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict, Any
 from pydantic import BaseModel, Field, model_validator, field_validator
 from ..content.slide_content import SlideContent
 from ..layouts.slide_layout import SlideLayout
+
+
+LAYOUT_CONTENT_LIMITS: Dict[SlideLayout, Dict[str, Any]] = {
+    SlideLayout.TITLE_AND_CONTENT: {
+        "max_bullet_length": 80,
+        "max_bullets": 5,
+        "max_para_length": 200,
+    },
+    SlideLayout.PICTURE_WITH_CAPTION: {
+        "max_bullet_length": None,
+        "max_bullets": 0,
+        "max_para_length": 120,
+    },
+    SlideLayout.TWO_CONTENT: {
+        "max_bullet_length": 60,
+        "max_bullets": 4,
+        "max_para_length": 150,
+    },
+    SlideLayout.COMPARISON: {
+        "max_bullet_length": 50,
+        "max_bullets": 4,
+        "max_para_length": None,
+    },
+    SlideLayout.CONTENT_WITH_CAPTION: {
+        "max_bullet_length": 60,
+        "max_bullets": 4,
+        "max_para_length": 150,
+    },
+}
 
 
 class Slide(BaseModel):
@@ -194,7 +223,48 @@ class Slide(BaseModel):
                     "as caption and not bullet points"
                 )
 
+        self._validate_layout_content_limits()
+
         return self
+
+    def _validate_layout_content_limits(self) -> None:
+        """Validate content against layout-specific length limits."""
+        limits = LAYOUT_CONTENT_LIMITS.get(self.layout)
+        if not limits or not self.content:
+            return
+
+        for text_content in [self.content.text, self.content.text2]:
+            if text_content is None:
+                continue
+
+            max_bullets = limits.get("max_bullets", 5)
+            max_bullet_len = limits.get("max_bullet_length")
+            max_para_len = limits.get("max_para_length")
+
+            if text_content.bullet:
+                if max_bullets == 0:
+                    raise ValueError(
+                        f"Bullets not allowed for {self.layout.value} layout"
+                    )
+                if len(text_content.bullet) > max_bullets:
+                    raise ValueError(
+                        f"Too many bullets for {self.layout.value}: "
+                        f"{len(text_content.bullet)} (max {max_bullets})"
+                    )
+                if max_bullet_len:
+                    for i, bullet in enumerate(text_content.bullet):
+                        if len(bullet) > max_bullet_len:
+                            raise ValueError(
+                                f"Bullet {i+1} too long for {self.layout.value}: "
+                                f"{len(bullet)} chars (max {max_bullet_len})"
+                            )
+
+            if text_content.para and max_para_len:
+                if len(text_content.para) > max_para_len:
+                    raise ValueError(
+                        f"Paragraph too long for {self.layout.value}: "
+                        f"{len(text_content.para)} chars (max {max_para_len})"
+                    )
 
     @field_validator("image")
     @classmethod

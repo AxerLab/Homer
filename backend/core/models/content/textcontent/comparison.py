@@ -1,22 +1,23 @@
 from pydantic import BaseModel, Field, model_validator,field_validator, conlist
-from typing import Optional
+from typing import Optional, List
 
-MAX_BULLET_POINTS = 5
+MAX_BULLET_POINTS = 4  # Reduced for side-by-side layouts
+MAX_BULLET_LENGTH_COMPARISON = 50  # Shorter bullets for comparison columns
 BulletList = conlist(str, min_length=0, max_length=MAX_BULLET_POINTS)
 
 class Comparison(BaseModel):
     """Model for comparison content with validation."""
 
     left_title: Optional[str] = Field(
-        None, description="Title for the left side of the comparison", max_length=200
+        None, description="Title for the left side of the comparison", max_length=100
     )
-    left_content: Optional[BulletList] = Field( # type: ignore
+    left_content: Optional[BulletList] = Field(  # type: ignore
         None, description="Content for the left side of the comparison"
     )
     right_title: Optional[str] = Field(
-        None, description="Title for the right side of the comparison", max_length=200
+        None, description="Title for the right side of the comparison", max_length=100
     )
-    right_content: Optional[BulletList] = Field( # type: ignore
+    right_content: Optional[BulletList] = Field(  # type: ignore
         None, description="Content for the right side of the comparison"
     )
 
@@ -29,18 +30,16 @@ class Comparison(BaseModel):
 
     @field_validator("left_content", "right_content")
     @classmethod
-    def validate_text_content(cls, v: Optional[BulletList]) -> Optional[BulletList]: # type: ignore
-        """Validate that text content is provided."""
+    def validate_text_content(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate that text content is provided and within length limits."""
         if v is None:
             raise ValueError("Bullet content must be provided for comparison")
+        for i, item in enumerate(v):
+            if not isinstance(item, str) or len(item.strip()) == 0:
+                raise ValueError("Each comparison bullet must be a non-empty string")
+            if len(item) > MAX_BULLET_LENGTH_COMPARISON:
+                raise ValueError(
+                    f"Comparison bullet {i+1} exceeds {MAX_BULLET_LENGTH_COMPARISON} chars "
+                    f"({len(item)} chars): '{item[:30]}...'"
+                )
         return v
-
-    @model_validator(mode="after")
-    def check_bullet_points_equal(self) -> "Comparison":
-        """Ensure both sides have the same number of bullet points."""
-        if self.left_content and self.right_content:
-            left_bullets = self.left_content
-            right_bullets = self.right_content
-            if len(left_bullets) != len(right_bullets):
-                raise ValueError("Both sides must have the same number of bullet points")
-        return self

@@ -283,7 +283,7 @@ async def update_slide(
             )
 
         # Regenerate the specific slide
-        updated_presentation = regenerate_slide(
+        updated_presentation = await regenerate_slide(
             presentation=current_presentation,
             slide_index=slide_data.slide_number - 1,  # Convert to 0-based index
             edit_prompt=slide_data.slide_content,

@@ -13,6 +13,7 @@ export const Workspace: React.FC = () => {
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewFileType, setViewFileType] = useState<'pptx' | 'pdf'>('pdf');
+  const [refreshKey, setRefreshKey] = useState(Date.now());
 
   const fetchPresentation = async () => {
     try {
@@ -23,6 +24,11 @@ export const Workspace: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSlideUpdate = () => {
+    fetchPresentation();
+    setRefreshKey(Date.now());
   };
 
   useEffect(() => {
@@ -88,6 +94,7 @@ export const Workspace: React.FC = () => {
           <DocumentViewer
             presentation={presentation}
             fileType={viewFileType}
+            refreshKey={refreshKey}
           />
         </div>
 
@@ -98,7 +105,7 @@ export const Workspace: React.FC = () => {
             <h2 className="text-lg font-semibold mb-2">Edit Slides</h2>
             <SlideEditor
               presentationId={presentation.id}
-              onUpdate={fetchPresentation}
+              onUpdate={handleSlideUpdate}
             />
           </div>
 
