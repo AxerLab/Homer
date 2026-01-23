@@ -40,9 +40,10 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
     setCacheBuster(Date.now());
   }, [presentation.id, presentation.slides?.length]);
 
-  // Always get PDF URL for preview with cache buster
-  const basePdfUrl = getFileUrl(presentation, 'pdf');
-  const pdfUrl = basePdfUrl ? `${basePdfUrl}?t=${cacheBuster}` : null;
+  const basePdfUrl = getFileUrl(presentation, 'pdf', { forPreview: true });
+  const pdfUrl = basePdfUrl 
+    ? `${basePdfUrl}${basePdfUrl.includes('?') ? '&' : '?'}t=${cacheBuster}` 
+    : null;
   // Get PPTX URL for download button (only if original type was pptx)
   const pptxUrl = fileType === 'pptx' ? getFileUrl(presentation, 'pptx') : null;
   // Get TeX URL for download button (only for LaTeX/PDF presentations, not PPTX)

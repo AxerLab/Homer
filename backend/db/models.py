@@ -13,6 +13,9 @@ class Presentation(Base):
     file_type = Column(String, default="pdf")
     theme = Column(String, nullable=True)
     json_object = Column(Text)
+    storage_backend = Column(String, default="local", nullable=False)
+    pptx_blob_path = Column(String, nullable=True)
+    pdf_blob_path = Column(String, nullable=True)
 
     def __repr__(self):
         return f"<Presentation(id='{self.id}', main_topic='{self.main_topic}', file_type='{self.file_type}')>"

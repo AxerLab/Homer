@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, Union
+from io import BytesIO
 from ...models.presentation.presentation import SlidePresentation
 from .generator import PPTXGenerator
 from ...tools.tavily_image_search import tavily_image_search
@@ -10,7 +11,8 @@ async def structure_to_ppt(
     pres: SlidePresentation,
     save_path: Optional[str] = None,
     theme: Optional[str] = None,
-):
+    return_bytes: bool = False,
+) -> Union[BytesIO, None]:
     """Convert presentation structure to PPTX file.
 
     Args:
@@ -223,14 +225,16 @@ async def structure_to_ppt(
                 )
 
             logger.debug(f"Adding picture_with_caption slide with title: {slide.title}")
-            # Pass all image URLs as fallback options
             generator.picture_with_caption_slide(
                 slide.title, image_urls, slide.content.text.para
             )
         else:
             raise ValueError(f"Unsupported slide layout: {slide.layout}")
 
+    if return_bytes:
+        return generator.save_to_bytes()
+
     if save_path:
         generator.save(save_path)
         logger.debug(f"PPTX saved to {save_path}")
-    return generator.prs
+    return None

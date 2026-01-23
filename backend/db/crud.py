@@ -9,9 +9,18 @@ def create_presentation(
     json_object: str,
     file_type: str = "pdf",
     theme: Optional[str] = None,
+    storage_backend: str = "local",
+    pptx_blob_path: Optional[str] = None,
+    pdf_blob_path: Optional[str] = None,
 ) -> models.Presentation:
     db_presentation = models.Presentation(
-        main_topic=main_topic, file_type=file_type, theme=theme, json_object=json_object
+        main_topic=main_topic,
+        file_type=file_type,
+        theme=theme,
+        json_object=json_object,
+        storage_backend=storage_backend,
+        pptx_blob_path=pptx_blob_path,
+        pdf_blob_path=pdf_blob_path,
     )
     db.add(db_presentation)
     db.commit()
@@ -45,6 +54,30 @@ def update_presentation_json(
     )
     if db_presentation:
         db_presentation.json_object = new_json_object
+        db.commit()
+        db.refresh(db_presentation)
+    return db_presentation
+
+
+def update_presentation_blob_paths(
+    db: Session,
+    presentation_id: str,
+    pptx_blob_path: Optional[str] = None,
+    pdf_blob_path: Optional[str] = None,
+    storage_backend: Optional[str] = None,
+) -> Optional[models.Presentation]:
+    db_presentation = (
+        db.query(models.Presentation)
+        .filter(models.Presentation.id == presentation_id)
+        .first()
+    )
+    if db_presentation:
+        if pptx_blob_path is not None:
+            db_presentation.pptx_blob_path = pptx_blob_path
+        if pdf_blob_path is not None:
+            db_presentation.pdf_blob_path = pdf_blob_path
+        if storage_backend is not None:
+            db_presentation.storage_backend = storage_backend
         db.commit()
         db.refresh(db_presentation)
     return db_presentation

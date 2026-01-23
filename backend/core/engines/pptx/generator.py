@@ -339,3 +339,9 @@ class PPTXGenerator:
 
     def save(self, file_path: str):
         self.prs.save(file_path)
+
+    def save_to_bytes(self) -> BytesIO:
+        buffer = BytesIO()
+        self.prs.save(buffer)
+        buffer.seek(0)
+        return buffer

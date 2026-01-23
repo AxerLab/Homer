@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.orm import Session
 import json
 import uuid
 import aiofiles
+import tempfile
 from pathlib import Path
+from typing import Literal
 
 from backend.db import crud, models
 from backend.api import schemas
@@ -23,6 +25,8 @@ from backend.core.engines.pptx.json_handler import structure_to_ppt
 from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
 from backend.config.logs import logger
+from backend.config.storage_config import storage_config
+from backend.core.storage import AzureBlobService
 from backend.core.rag.service import rag_service, DocumentStatus
 from backend.core.rag.config import rag_config
 from backend.core.rag.schemas import (
@@ -86,40 +90,104 @@ async def create_presentation(
             presentation.main_topic, presentation.main_topic, use_rag=presentation.use_rag
         )
 
-        # Convert to JSON string for storage
         json_string = generated_presentation.model_dump_json()
         logger.debug(f"Generated presentation JSON: {json_string}")
 
-        # Create database entry
-        db_presentation = crud.create_presentation(
-            db=db,
-            main_topic=presentation.main_topic,
-            json_object=json_string,
-            file_type=presentation.file_type,
-            theme=presentation.theme,
-        )
+        pptx_blob_path = None
+        pdf_blob_path = None
+        use_azure = storage_config.is_azure
+        db_presentation = None
 
-        # Generate file with UUID as name
         if presentation.file_type == "pptx":
-            file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
-            await structure_to_ppt(
-                generated_presentation,
-                save_path=str(file_path),
-                theme=presentation.theme,
-            )
+            if use_azure:
+                storage_service = await AzureBlobService.get_instance()
+                presentation_id = str(uuid.uuid4())
 
-            # Also convert PPTX to PDF for preview
-            pdf_path = PDF_DIR / f"{db_presentation.id}.pdf"
-            convert_pptx_to_pdf(str(file_path), str(pdf_path))
+                pptx_bytes = await structure_to_ppt(
+                    generated_presentation,
+                    theme=presentation.theme,
+                    return_bytes=True,
+                )
+
+                if pptx_bytes:
+                    pptx_blob_path = f"pptx/{presentation_id}.pptx"
+                    await storage_service.upload_from_stream(
+                        pptx_bytes,
+                        pptx_blob_path,
+                        content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    )
+
+                    with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as tmp:
+                        tmp.write(pptx_bytes.getvalue())
+                        tmp_pptx_path = tmp.name
+
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+                        tmp_pdf_path = tmp_pdf.name
+
+                    convert_pptx_to_pdf(tmp_pptx_path, tmp_pdf_path)
+
+                    with open(tmp_pdf_path, "rb") as f:
+                        pdf_bytes = f.read()
+
+                    pdf_blob_path = f"pdf/{presentation_id}.pdf"
+                    await storage_service.upload_presentation(
+                        pdf_bytes,
+                        pdf_blob_path,
+                        content_type="application/pdf",
+                    )
+
+                    Path(tmp_pptx_path).unlink(missing_ok=True)
+                    Path(tmp_pdf_path).unlink(missing_ok=True)
+
+                    db_presentation = models.Presentation(
+                        id=presentation_id,
+                        main_topic=presentation.main_topic,
+                        json_object=json_string,
+                        file_type=presentation.file_type,
+                        theme=presentation.theme,
+                        storage_backend="azure",
+                        pptx_blob_path=pptx_blob_path,
+                        pdf_blob_path=pdf_blob_path,
+                    )
+                    db.add(db_presentation)
+                    db.commit()
+                    db.refresh(db_presentation)
+            else:
+                db_presentation = crud.create_presentation(
+                    db=db,
+                    main_topic=presentation.main_topic,
+                    json_object=json_string,
+                    file_type=presentation.file_type,
+                    theme=presentation.theme,
+                    storage_backend="local",
+                )
+                file_path = PPTX_DIR / f"{db_presentation.id}.pptx"
+                await structure_to_ppt(
+                    generated_presentation,
+                    save_path=str(file_path),
+                    theme=presentation.theme,
+                )
+                pdf_path = PDF_DIR / f"{db_presentation.id}.pdf"
+                convert_pptx_to_pdf(str(file_path), str(pdf_path))
 
         elif presentation.file_type == "pdf":
-            # Generate PDF with UUID name in the PDF directory
-            pdf_output_path = str(PDF_DIR / db_presentation.id)
+            db_presentation = crud.create_presentation(
+                db=db,
+                main_topic=presentation.main_topic,
+                json_object=json_string,
+                file_type=presentation.file_type,
+                theme=presentation.theme,
+                storage_backend="local",
+            )
+            pdf_output_path = str(PDF_DIR / str(db_presentation.id))
             await generate_tex_and_pdf(
                 generated_presentation,
                 tex_path=f"{pdf_output_path}.tex",
                 output_filename=pdf_output_path,
             )
+
+        if db_presentation is None:
+            raise HTTPException(status_code=500, detail="Failed to create presentation")
 
         return schemas.PresentationCreateResponse(id=str(db_presentation.id))
 
@@ -223,26 +291,32 @@ def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
 
 
 @app.delete("/api/v1/presentations/{presentation_id}")
-def delete_presentation(presentation_id: str, db: Session = Depends(get_db)):
-    """
-    Delete presentation by UUID
-    Removes entry from database and deletes associated files
-    """
-    # Check if presentation exists
+async def delete_presentation(presentation_id: str, db: Session = Depends(get_db)):
     db_presentation = crud.get_presentation(db, presentation_id=presentation_id)
     if db_presentation is None:
         raise HTTPException(status_code=404, detail="Presentation not found")
 
-    # Delete associated files
-    pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
-    pdf_file = PDF_DIR / f"{presentation_id}.pdf"
+    storage_backend = getattr(db_presentation, "storage_backend", "local")
 
-    if pptx_file.exists():
-        pptx_file.unlink()
-    if pdf_file.exists():
-        pdf_file.unlink()
+    if storage_backend == "azure":
+        try:
+            storage_service = await AzureBlobService.get_instance()
+            pptx_blob = getattr(db_presentation, "pptx_blob_path", None)
+            pdf_blob = getattr(db_presentation, "pdf_blob_path", None)
+            if pptx_blob:
+                await storage_service.delete_presentation(pptx_blob)
+            if pdf_blob:
+                await storage_service.delete_presentation(pdf_blob)
+        except Exception as e:
+            logger.error(f"Failed to delete Azure blobs: {e}")
+    else:
+        pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
+        pdf_file = PDF_DIR / f"{presentation_id}.pdf"
+        if pptx_file.exists():
+            pptx_file.unlink()
+        if pdf_file.exists():
+            pdf_file.unlink()
 
-    # Delete from database
     deleted = crud.delete_presentation(db, presentation_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Presentation not found")
@@ -327,7 +401,92 @@ async def update_slide(
         raise HTTPException(status_code=500, detail=f"Error updating slide: {str(e)}")
 
 
-# Health check endpoint
+@app.get("/api/v1/presentations/{presentation_id}/download")
+async def download_presentation(
+    presentation_id: str,
+    format: Literal["pptx", "pdf"] = "pptx",
+    redirect: bool = True,
+    db: Session = Depends(get_db),
+):
+    db_presentation = crud.get_presentation(db, presentation_id=presentation_id)
+    if db_presentation is None:
+        raise HTTPException(status_code=404, detail="Presentation not found")
+
+    storage_backend = getattr(db_presentation, "storage_backend", "local")
+
+    if storage_backend == "azure":
+        try:
+            storage_service = await AzureBlobService.get_instance()
+            if format == "pptx":
+                blob_path = getattr(db_presentation, "pptx_blob_path", None)
+                media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            else:
+                blob_path = getattr(db_presentation, "pdf_blob_path", None)
+                media_type = "application/pdf"
+
+            if not blob_path:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"{format.upper()} file not available for this presentation",
+                )
+
+            if redirect:
+                download_url = storage_service.generate_download_url(blob_path)
+                return RedirectResponse(url=download_url, status_code=302)
+            else:
+                content = await storage_service.download_presentation(blob_path)
+                return StreamingResponse(
+                    iter([content]),
+                    media_type=media_type,
+                    headers={
+                        "Content-Disposition": f"inline; filename={presentation_id}.{format}",
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                )
+
+        except RuntimeError as e:
+            logger.error(f"Azure storage error: {e}")
+            raise HTTPException(status_code=500, detail="Storage service unavailable")
+    else:
+        if format == "pptx":
+            file_path = PPTX_DIR / f"{presentation_id}.pptx"
+            media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        else:
+            file_path = PDF_DIR / f"{presentation_id}.pdf"
+            media_type = "application/pdf"
+
+        if not file_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"{format.upper()} file not found",
+            )
+
+        return StreamingResponse(
+            open(file_path, "rb"),
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"attachment; filename={presentation_id}.{format}"
+            },
+        )
+
+
+@app.get("/api/v1/storage/health")
+async def storage_health():
+    if storage_config.is_azure:
+        try:
+            storage_service = await AzureBlobService.get_instance()
+            return await storage_service.health_check()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+    else:
+        return {
+            "status": "healthy",
+            "backend": "local",
+            "pptx_dir": str(PPTX_DIR),
+            "pdf_dir": str(PDF_DIR),
+        }
+
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
