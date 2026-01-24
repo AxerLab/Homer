@@ -38,6 +38,7 @@ jobs:
         docker compose build frontend
         docker compose build tex-service
         docker compose build pptx-service
+        docker compose build rag-service
 
         # Tag and push backend
         docker tag pptai-backend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
@@ -54,6 +55,10 @@ jobs:
         # Tag and push pptx-service
         docker tag pptai-pptx-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
+
+        # Tag and push rag-service
+        docker tag pptai-rag-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-rag-service:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-rag-service:latest
 
     - name: Login to Azure
       uses: azure/login@v1
@@ -82,3 +87,8 @@ jobs:
           --name pptai-pptx-service \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
+
+        az containerapp update \
+          --name pptai-rag-service \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pptai-rag-service:latest
