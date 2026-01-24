@@ -12,14 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Free up disk space
+    - name: Free up disk space (aggressive)
       run: |
-        # Remove unnecessary tools to free ~30GB
+        # Remove unnecessary tools to free ~50GB
         sudo rm -rf /usr/share/dotnet
         sudo rm -rf /usr/local/lib/android
         sudo rm -rf /opt/ghc
         sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /opt/hostedtoolcache/Python
+        sudo rm -rf /opt/hostedtoolcache/Ruby
+        sudo rm -rf /opt/hostedtoolcache/go
+        sudo rm -rf /opt/hostedtoolcache/node
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/share/swift
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         sudo docker system prune -af
+        sudo apt-get clean
         df -h
     
     - uses: actions/checkout@v3
@@ -31,34 +39,43 @@ jobs:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build and push Docker images
+    - name: Build and push lightweight services
       run: |
-        # Build services individually (avoids dependency resolution issues)
-        docker compose build backend
+        # Build and push lightweight services first
         docker compose build frontend
-        docker compose build tex-service
-        docker compose build pptx-service
-        docker compose build rag-service
-
-        # Tag and push backend
-        docker tag pptai-backend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
-
-        # Tag and push frontend
         docker tag pptai-frontend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-frontend:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-frontend:latest
+        docker rmi pptai-frontend:latest || true
 
-        # Tag and push tex-service
+        docker compose build tex-service
         docker tag pptai-tex-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-tex-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-tex-service:latest
+        docker rmi pptai-tex-service:latest || true
 
-        # Tag and push pptx-service
+        docker compose build pptx-service
         docker tag pptai-pptx-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-pptx-service:latest
+        docker rmi pptai-pptx-service:latest || true
 
-        # Tag and push rag-service
+        # Cleanup before heavy builds
+        docker system prune -af
+        df -h
+
+    - name: Build and push backend
+      run: |
+        docker compose build backend
+        docker tag pptai-backend:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-backend:latest
+        docker rmi pptai-backend:latest || true
+        docker system prune -af
+        df -h
+
+    - name: Build and push rag-service
+      run: |
+        docker compose build rag-service
         docker tag pptai-rag-service:latest ${{ secrets.ACR_LOGIN_SERVER }}/pptai-rag-service:latest
         docker push ${{ secrets.ACR_LOGIN_SERVER }}/pptai-rag-service:latest
+        docker rmi pptai-rag-service:latest || true
 
     - name: Login to Azure
       uses: azure/login@v1
