@@ -1,6 +1,8 @@
 import React from 'react'
-import { ChevronLeft, ChevronRight } from '@mui/icons-material'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { ArrowLeft01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 interface SlideNavigatorProps {
   currentSlide: number
@@ -27,37 +29,35 @@ export const SlideNavigator: React.FC<SlideNavigatorProps> = ({
 
   return (
     <div className="flex items-center gap-4">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={handlePrevious}
         disabled={currentSlide === 1}
         className={cn(
-          'p-2 rounded-lg transition-colors',
-          currentSlide === 1
-            ? 'text-text-muted cursor-not-allowed opacity-50'
-            : 'text-text hover:bg-primary/10'
+          currentSlide === 1 && 'text-muted-foreground opacity-50'
         )}
       >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
+        <HugeiconsIcon icon={ArrowLeft01Icon} size={20} />
+      </Button>
 
-      <div className="text-text">
+      <div className="text-foreground">
         <span className="font-medium">{currentSlide}</span>
-        <span className="text-text-muted mx-2">/</span>
-        <span className="text-text-muted">{totalSlides}</span>
+        <span className="text-muted-foreground mx-2">/</span>
+        <span className="text-muted-foreground">{totalSlides}</span>
       </div>
 
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={handleNext}
         disabled={currentSlide === totalSlides}
         className={cn(
-          'p-2 rounded-lg transition-colors',
-          currentSlide === totalSlides
-            ? 'text-text-muted cursor-not-allowed opacity-50'
-            : 'text-text hover:bg-primary/10'
+          currentSlide === totalSlides && 'text-muted-foreground opacity-50'
         )}
       >
-        <ChevronRight className="w-5 h-5" />
-      </button>
+        <HugeiconsIcon icon={ArrowRight01Icon} size={20} />
+      </Button>
     </div>
   )
 }

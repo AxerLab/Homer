@@ -1,6 +1,16 @@
 import React from 'react'
-import { Delete, Description, CheckCircle, Error as ErrorIcon, HourglassEmpty } from '@mui/icons-material'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { 
+  Delete01Icon, 
+  File01Icon, 
+  CheckmarkCircle01Icon, 
+  AlertCircleIcon, 
+  HourglassIcon 
+} from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 
 interface DocumentProgressCardProps {
   id: string
@@ -36,65 +46,57 @@ export const DocumentProgressCard: React.FC<DocumentProgressCardProps> = ({
   const isProcessing = status === 'pending' || status === 'processing'
 
   const statusConfig = {
-    pending: { color: 'text-yellow-500', bg: 'bg-yellow-500/20', icon: HourglassEmpty },
-    processing: { color: 'text-primary', bg: 'bg-primary/20', icon: HourglassEmpty },
-    completed: { color: 'text-accent', bg: 'bg-accent/20', icon: CheckCircle },
-    failed: { color: 'text-destructive', bg: 'bg-destructive/20', icon: ErrorIcon }
+    pending: { color: 'text-yellow-500', bg: 'bg-yellow-500/20', icon: HourglassIcon },
+    processing: { color: 'text-primary', bg: 'bg-primary/20', icon: HourglassIcon },
+    completed: { color: 'text-accent', bg: 'bg-accent/20', icon: CheckmarkCircle01Icon },
+    failed: { color: 'text-destructive', bg: 'bg-destructive/20', icon: AlertCircleIcon }
   }
 
   const config = statusConfig[status]
   const StatusIcon = config.icon
 
   return (
-    <div className="bg-[#13131a] border border-[#1e293b] rounded-lg p-4 hover:border-[#6366f1]/50 transition-colors">
+    <Card className="p-4 hover:border-primary/50 transition-colors">
       <div className="flex items-start gap-3">
-        <div className={cn('p-2 rounded-lg', config.bg)}>
-          <Description className={cn('w-5 h-5', config.color)} />
+        <div className={cn('p-2 rounded-md', config.bg)}>
+          <HugeiconsIcon icon={File01Icon} size={20} className={config.color} />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-[#f8fafc] truncate" title={filename}>
+            <h3 className="text-sm font-medium text-foreground truncate" title={filename}>
               {filename}
             </h3>
-            <span className="px-1.5 py-0.5 text-xs font-mono bg-[#1e293b] text-[#94a3b8] rounded uppercase">
+            <Badge variant="secondary" className="text-xs font-mono uppercase">
               {fileExtension}
-            </span>
+            </Badge>
           </div>
 
-          <p className="text-xs text-[#94a3b8] mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {formatFileSize(fileSizeBytes)}
           </p>
 
           {isProcessing && (
             <div className="mt-2">
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-[#94a3b8]">{progressMessage || 'Processing...'}</span>
-                <span className="text-[#6366f1]">{progress}%</span>
+                <span className="text-muted-foreground">{progressMessage || 'Processing...'}</span>
+                <span className="text-primary">{progress}%</span>
               </div>
-              <div className="h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full bg-[#6366f1] rounded-full transition-all duration-300',
-                    status === 'processing' && 'animate-pulse'
-                  )}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <Progress value={progress} className="h-1.5" />
             </div>
           )}
 
           {status === 'completed' && (
             <div className="flex items-center gap-1 mt-2">
-              <StatusIcon className="w-4 h-4 text-[#14b8a6]" />
-              <span className="text-xs text-[#14b8a6]">Ready to use</span>
+              <HugeiconsIcon icon={StatusIcon} size={16} className="text-accent" />
+              <span className="text-xs text-accent">Ready to use</span>
             </div>
           )}
 
           {status === 'failed' && error && (
             <div className="flex items-center gap-1 mt-2">
-              <StatusIcon className="w-4 h-4 text-[#ef4444]" />
-              <span className="text-xs text-[#ef4444] truncate" title={error}>
+              <HugeiconsIcon icon={StatusIcon} size={16} className="text-destructive" />
+              <span className="text-xs text-destructive truncate" title={error}>
                 {error}
               </span>
             </div>
@@ -105,16 +107,16 @@ export const DocumentProgressCard: React.FC<DocumentProgressCardProps> = ({
           onClick={() => onDelete(id)}
           disabled={isProcessing}
           className={cn(
-            'p-1.5 rounded-lg transition-colors',
+            'p-1.5 rounded-md transition-colors',
             isProcessing
-              ? 'text-[#64748b] cursor-not-allowed'
-              : 'text-[#94a3b8] hover:text-[#ef4444] hover:bg-[#ef4444]/10'
+              ? 'text-muted-foreground/50 cursor-not-allowed'
+              : 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
           )}
           title={isProcessing ? 'Cannot delete while processing' : 'Delete document'}
         >
-          <Delete className="w-4 h-4" />
+          <HugeiconsIcon icon={Delete01Icon} size={16} />
         </button>
       </div>
-    </div>
+    </Card>
   )
 }

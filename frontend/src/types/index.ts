@@ -11,7 +11,7 @@ export type Slide = {
 export type PastChat = {
   id: string
   title: string
-  timestamp: Date
+  timestamp: Date | string
   presentationId?: string
 }
 

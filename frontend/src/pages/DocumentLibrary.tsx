@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { CloudUpload, Folder } from '@mui/icons-material'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { CloudUploadIcon, Folder01Icon } from '@hugeicons/core-free-icons'
 import { DocumentProgressCard } from '@/components/rag/DocumentProgressCard'
 import { ragApi } from '@/services/api'
 import { subscribeToDocumentProgress } from '@/services/sse'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import type { RAGDocumentStatus } from '@/types/api'
 
 export const DocumentLibrary: React.FC = () => {
@@ -132,59 +135,60 @@ export const DocumentLibrary: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-text">Document Library</h1>
-            <p className="text-text-muted mt-1">
+            <h1 className="text-2xl font-bold text-foreground">Document Library</h1>
+            <p className="text-muted-foreground mt-1">
               Upload documents to enhance your presentations with context
             </p>
           </div>
-          <a
-            href="#/"
-            className="px-4 py-2 bg-elevated border border-border text-text-muted rounded-lg hover:border-primary/50 transition-colors"
-          >
-            Back to Generator
-          </a>
+          <Button variant="outline" asChild>
+            <a href="#/">Back to Generator</a>
+          </Button>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/50 rounded-lg text-destructive">
-            {error}
-            <button onClick={() => setError(null)} className="ml-4 underline">Dismiss</button>
-          </div>
+          <Card className="mb-6 p-4 bg-destructive/10 border-destructive/50">
+            <div className="flex items-center justify-between text-destructive">
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="underline text-sm">Dismiss</button>
+            </div>
+          </Card>
         )}
 
-        <div
+        <Card
           {...getRootProps()}
-          className={`
-            mb-8 p-8 border-2 border-dashed rounded-xl transition-all cursor-pointer
-            ${isDragActive 
-              ? 'border-primary bg-[#6366f1]/10' 
-              : 'border-border hover:border-primary/50 bg-elevated'
-            }
-          `}
+          className={`mb-8 p-8 border-2 border-dashed cursor-pointer transition-all ${
+            isDragActive 
+              ? 'border-primary bg-primary/10' 
+              : 'border-border hover:border-primary/50'
+          }`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center text-center">
-            <CloudUpload className={`w-12 h-12 mb-4 ${isDragActive ? 'text-primary' : 'text-text-muted'}`} />
-            <p className="text-text font-medium">
+            <HugeiconsIcon 
+              icon={CloudUploadIcon} 
+              size={48} 
+              className={isDragActive ? 'text-primary' : 'text-muted-foreground'} 
+            />
+            <p className="text-foreground font-medium mt-4">
               {isDragActive ? 'Drop files here' : 'Drag & drop files here'}
             </p>
-            <p className="text-text-muted text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               or click to browse (PDF, DOCX, PPTX, TXT, MD, Images)
             </p>
           </div>
-        </div>
+        </Card>
 
         {documents.length === 0 ? (
           <div className="text-center py-16">
-            <Folder className="w-16 h-16 text-[#1e293b] mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-text">No documents yet</h3>
-            <p className="text-text-muted mt-1">
+            <HugeiconsIcon icon={Folder01Icon} size={64} className="text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground">No documents yet</h3>
+            <p className="text-muted-foreground mt-1">
               Upload documents to build your knowledge base
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
               {documents.length} Document{documents.length !== 1 ? 's' : ''}
             </h2>
             {documents.map(doc => (

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Text
+from sqlalchemy import Column, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime, timezone
 import uuid
 
 Base = declarative_base()
@@ -16,6 +17,7 @@ class Presentation(Base):
     storage_backend = Column(String, default="local", nullable=False)
     pptx_blob_path = Column(String, nullable=True)
     pdf_blob_path = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     def __repr__(self):
         return f"<Presentation(id='{self.id}', main_topic='{self.main_topic}', file_type='{self.file_type}')>"

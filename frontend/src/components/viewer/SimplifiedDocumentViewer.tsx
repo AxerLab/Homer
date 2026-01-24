@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, Download } from '@mui/icons-material';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft01Icon, ArrowRight01Icon, Download01Icon, ArrowLeftDoubleIcon, ArrowRightDoubleIcon } from '@hugeicons/core-free-icons';
 import type { Presentation } from '@/types/api';
 import { getFileUrl } from '@/utils/fileUrls';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import './SimplifiedDocumentViewer.css';
 
-// Set up the PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface SimplifiedDocumentViewerProps {
@@ -30,23 +31,20 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   const [pageNumber, setPageNumber] = useState(currentPage);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Cache buster to force reload PDF after updates
   const [cacheBuster, setCacheBuster] = useState(Date.now());
 
-  // Reset state and bust cache when presentation changes (e.g., after slide update)
   useEffect(() => {
     setLoading(true);
     setError(null);
     setCacheBuster(Date.now());
+    setPageNumber(1);
   }, [presentation.id, presentation.slides?.length]);
 
   const basePdfUrl = getFileUrl(presentation, 'pdf', { forPreview: true });
   const pdfUrl = basePdfUrl 
     ? `${basePdfUrl}${basePdfUrl.includes('?') ? '&' : '?'}t=${cacheBuster}` 
     : null;
-  // Get PPTX URL for download button (only if original type was pptx)
   const pptxUrl = fileType === 'pptx' ? getFileUrl(presentation, 'pptx') : null;
-  // Get TeX URL for download button (only for LaTeX/PDF presentations, not PPTX)
   const texUrl = fileType !== 'pptx' ? getFileUrl(presentation, 'tex') : null;
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -71,103 +69,125 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
   if (!pdfUrl) {
     return (
       <div className={cn('flex items-center justify-center h-full', className)}>
-        <p className="text-text-muted">No document available</p>
+        <p className="text-muted-foreground">No document available</p>
       </div>
     );
   }
 
   return (
     <div className={cn('flex flex-col h-full bg-background', className)}>
-      {/* Navigation controls at the top */}
       <div className="flex items-center justify-center gap-4 py-2">
         {numPages && numPages > 1 && (
           <>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handlePageChange(1)}
+              disabled={pageNumber <= 1}
+              title="First slide"
+            >
+              <HugeiconsIcon icon={ArrowLeftDoubleIcon} size={20} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => handlePageChange(pageNumber - 1)}
               disabled={pageNumber <= 1}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                pageNumber === 1
-                  ? 'text-text-muted cursor-not-allowed opacity-50'
-                  : 'text-text hover:bg-primary/10'
-              )}
+              title="Previous slide"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={20} />
+            </Button>
 
-            <div className="text-text">
+            <div className="text-foreground">
               <span className="font-medium">{pageNumber}</span>
-              <span className="text-text-muted mx-2">/</span>
-              <span className="text-text-muted">{numPages}</span>
+              <span className="text-muted-foreground mx-2">/</span>
+              <span className="text-muted-foreground">{numPages}</span>
             </div>
 
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => handlePageChange(pageNumber + 1)}
               disabled={pageNumber >= numPages}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                pageNumber === numPages
-                  ? 'text-text-muted cursor-not-allowed opacity-50'
-                  : 'text-text hover:bg-primary/10'
-              )}
+              title="Next slide"
             >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={20} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handlePageChange(numPages)}
+              disabled={pageNumber >= numPages}
+              title="Last slide"
+            >
+              <HugeiconsIcon icon={ArrowRightDoubleIcon} size={20} />
+            </Button>
           </>
         )}
 
-        {/* Download buttons */}
         <div className="flex gap-2 ml-4">
           {pptxUrl && (
-            <a
-              href={pptxUrl}
-              download={`${presentation.main_topic}.pptx`}
-              className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm rounded-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center gap-1 font-medium shadow-sm"
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-border text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5"
             >
-              <Download className="w-4 h-4" />
-              PPTX
-            </a>
+              <a href={pptxUrl} download={`${presentation.main_topic}.pptx`}>
+                <HugeiconsIcon icon={Download01Icon} size={14} />
+                PPTX
+              </a>
+            </Button>
           )}
-          <a
-            href={pdfUrl}
-            download={`${presentation.main_topic}.pdf`}
-            className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all flex items-center gap-1 font-medium shadow-sm"
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="border-border text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5"
           >
-            <Download className="w-4 h-4" />
-            PDF
-          </a>
-          {texUrl && (
-            <a
-              href={texUrl}
-              download={`${presentation.main_topic}.tex`}
-              className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-teal-600 transition-all flex items-center gap-1 font-medium shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              TeX
+            <a href={pdfUrl} download={`${presentation.main_topic}.pdf`}>
+              <HugeiconsIcon icon={Download01Icon} size={14} />
+              PDF
             </a>
+          </Button>
+          {texUrl && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-border text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5"
+            >
+              <a href={texUrl} download={`${presentation.main_topic}.tex`}>
+                <HugeiconsIcon icon={Download01Icon} size={14} />
+                TeX
+              </a>
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Document viewer */}
       <div className="flex-1 overflow-auto flex items-start justify-center pt-4">
         {loading && (
-          <div className="text-text-muted pt-8">Loading document...</div>
+          <div className="text-muted-foreground pt-8">Loading document...</div>
         )}
 
         {error && (
-          <div className="text-red-500 pt-8 text-center px-4">
+          <div className="text-destructive pt-8 text-center px-4">
             {error}
             {pptxUrl && (
               <div className="mt-4">
-                <a
-                  href={pptxUrl}
-                  download={`${presentation.main_topic}.pptx`}
-                  className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-all inline-flex items-center gap-2 font-medium shadow-md"
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-border text-muted-foreground hover:text-foreground hover:bg-muted gap-2"
                 >
-                  <Download className="w-5 h-5" />
-                  Download PPTX Instead
-                </a>
+                  <a href={pptxUrl} download={`${presentation.main_topic}.pptx`}>
+                    <HugeiconsIcon icon={Download01Icon} size={18} />
+                    Download PPTX Instead
+                  </a>
+                </Button>
               </div>
             )}
           </div>
@@ -182,7 +202,7 @@ export const SimplifiedDocumentViewer: React.FC<SimplifiedDocumentViewerProps> =
         >
           <Page
             pageNumber={pageNumber}
-            className="shadow-2xl rounded-lg"
+            className="shadow-2xl rounded-md"
             renderTextLayer={true}
             renderAnnotationLayer={true}
             width={Math.min(window.innerWidth - 400, 900)}

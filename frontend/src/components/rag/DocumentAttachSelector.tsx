@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { AttachFile, CheckBox, CheckBoxOutlineBlank, OpenInNew } from '@mui/icons-material'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { 
+  Attachment01Icon, 
+  CheckmarkSquare01Icon, 
+  SquareIcon, 
+  ArrowUpRight01Icon 
+} from '@hugeicons/core-free-icons'
 import { ragApi } from '@/services/api'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { RAGDocumentStatus } from '@/types/api'
 
 interface DocumentAttachSelectorProps {
@@ -56,31 +64,31 @@ export const DocumentAttachSelector: React.FC<DocumentAttachSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-[#13131a] border border-[#1e293b] rounded-lg text-[#94a3b8] hover:border-[#6366f1]/50 hover:text-[#f8fafc] transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-md text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
       >
-        <AttachFile className="w-4 h-4" />
+        <HugeiconsIcon icon={Attachment01Icon} size={16} />
         <span className="text-sm">Attach Documents</span>
         {selectedCount > 0 && (
-          <span className="px-1.5 py-0.5 text-xs bg-[#6366f1] text-white rounded-full">
+          <Badge className="px-1.5 py-0.5 text-xs">
             {selectedCount}
-          </span>
+          </Badge>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-[#13131a] border border-[#1e293b] rounded-lg shadow-xl z-50">
-          <div className="p-3 border-b border-[#1e293b]">
-            <h4 className="text-sm font-medium text-[#f8fafc]">Select Documents</h4>
-            <p className="text-xs text-[#94a3b8] mt-0.5">Choose context for generation</p>
+        <Card className="absolute top-full left-0 mt-2 w-72 shadow-xl z-50">
+          <div className="p-3 border-b border-border">
+            <h4 className="text-sm font-medium text-foreground">Select Documents</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">Choose context for generation</p>
           </div>
 
           <div className="max-h-64 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center">
-                <div className="w-5 h-5 border-2 border-[#6366f1] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             ) : documents.length === 0 ? (
-              <div className="p-4 text-center text-[#94a3b8] text-sm">
+              <div className="p-4 text-center text-muted-foreground text-sm">
                 No completed documents available
               </div>
             ) : (
@@ -92,16 +100,16 @@ export const DocumentAttachSelector: React.FC<DocumentAttachSelectorProps> = ({
                       key={doc.id}
                       type="button"
                       onClick={() => toggleDocument(doc.id)}
-                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#1e293b] transition-colors"
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted transition-colors"
                     >
-                      {isSelected ? (
-                        <CheckBox className="w-5 h-5 text-[#6366f1]" />
-                      ) : (
-                        <CheckBoxOutlineBlank className="w-5 h-5 text-[#94a3b8]" />
-                      )}
+                      <HugeiconsIcon 
+                        icon={isSelected ? CheckmarkSquare01Icon : SquareIcon} 
+                        size={20} 
+                        className={isSelected ? 'text-primary' : 'text-muted-foreground'} 
+                      />
                       <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm text-[#f8fafc] truncate">{doc.filename}</p>
-                        <p className="text-xs text-[#94a3b8] uppercase">{doc.file_extension}</p>
+                        <p className="text-sm text-foreground truncate">{doc.filename}</p>
+                        <p className="text-xs text-muted-foreground uppercase">{doc.file_extension}</p>
                       </div>
                     </button>
                   )
@@ -110,16 +118,16 @@ export const DocumentAttachSelector: React.FC<DocumentAttachSelectorProps> = ({
             )}
           </div>
 
-          <div className="p-2 border-t border-[#1e293b]">
+          <div className="p-2 border-t border-border">
             <a
               href="#/documents"
-              className="flex items-center justify-center gap-1 text-xs text-[#6366f1] hover:text-[#8b5cf6] transition-colors"
+              className="flex items-center justify-center gap-1 text-xs text-primary hover:text-secondary transition-colors"
             >
               <span>Manage Documents</span>
-              <OpenInNew className="w-3 h-3" />
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={12} />
             </a>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   )

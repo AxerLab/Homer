@@ -1,6 +1,7 @@
 // Enhanced API client with proper error handling and logging
 import type { 
-  Presentation, 
+  Presentation,
+  PresentationListItem,
   CreatePresentationRequest,
   RAGDocumentUploadResponse,
   RAGQueryRequest,
@@ -88,7 +89,7 @@ export const presentationApi = {
   },
 
   // Get all presentations
-  async getPresentations(skip = 0, limit = 100): Promise<Presentation[]> {
+  async getPresentations(skip = 0, limit = 100): Promise<PresentationListItem[]> {
     console.log('Fetching presentations...');
 
     const response = await fetch(
@@ -101,10 +102,9 @@ export const presentationApi = {
       }
     );
 
-    const data = await handleResponse<{ presentations: Presentation[], skip: number, limit: number, total: number }>(response);
+    const data = await handleResponse<{ presentations: PresentationListItem[], skip: number, limit: number, total: number }>(response);
     console.log(`Fetched ${data.presentations.length} presentations out of ${data.total} total`);
 
-    // The API returns an object with presentations array
     return data.presentations;
   },
 

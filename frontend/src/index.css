@@ -3,17 +3,54 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 263 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 5% 16%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 172 66% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 239 84% 67%;
+    --radius: 0.375rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
   html, body {
-    @apply bg-background text-text;
+    @apply bg-background text-foreground;
     height: 100%;
     margin: 0;
     padding: 0;
+    font-family: 'Noto Sans', system-ui, -apple-system, sans-serif;
   }
-  #root { height: 100%; }
+  
+  #root {
+    height: 100%;
+  }
 }
 
 @layer components {
-  .glass-effect { @apply backdrop-blur-lg bg-elevated/50 border border-border; }
-  .glow-effect { box-shadow: 0 0 20px 10px rgba(99, 102, 241, 0.2); }
-  .slide-preview { @apply bg-gradient-to-b from-gray-700 to-gray-800 rounded-lg; }
+  .glass-effect {
+    @apply backdrop-blur-lg bg-card/50 border border-border;
+  }
+  .glow-effect {
+    box-shadow: 0 0 20px 10px rgba(99, 102, 241, 0.2);
+  }
+  .slide-preview {
+    @apply bg-gradient-to-b from-gray-700 to-gray-800 rounded-lg;
+  }
 }

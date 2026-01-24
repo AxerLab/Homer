@@ -12,6 +12,7 @@ AVAILABLE_THEMES = {
     "default": None,  # Will use python-pptx default blank template
     "dark": TEMPLATES_DIR / "dark.pptx",
     "light": TEMPLATES_DIR / "light.pptx",
+    "atlas": TEMPLATES_DIR / "atlas.pptx",
 }
 
 def get_template_path(theme: str | None) -> str | None:

@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { SlideCanvas } from './components/presentation/SlideCanvas'
 import { SlideContentPanel } from './components/presentation/SlideContentPanel'
 import { GenerateButton } from './components/presentation/GenerateButton'
-import { LoadingOverlay } from './components/ui/LoadingOverlay'
 import { DocumentLibrary } from './pages/DocumentLibrary'
 import { cn } from './lib/utils'
 import type { PastChat } from './types'
-import type { Presentation } from './types/api'
-import { presentationApi } from './services/api'
+import type { Presentation, PresentationListItem } from './types/api'
+import { presentationApi, ragApi } from './services/api'
 
 function useHashRoute() {
   const [route, setRoute] = useState(window.location.hash.slice(1) || '/')
@@ -31,12 +31,35 @@ function MainApp() {
   const [currentSlide, setCurrentSlide] = useState(1)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isModifying, setIsModifying] = useState(false)
-  const [, setPresentations] = useState<Presentation[]>([])
+  const [, setPresentations] = useState<PresentationListItem[]>([])
   const [currentPresentation, setCurrentPresentation] = useState<Presentation | null>(null)
   const [pastChats, setPastChats] = useState<PastChat[]>([])
+  const [documentCount, setDocumentCount] = useState(0)
+
+  const fetchDocumentCount = useCallback(async () => {
+    try {
+      const response = await ragApi.listDocuments()
+      setDocumentCount(response.documents.length)
+    } catch {
+      setDocumentCount(0)
+    }
+  }, [])
 
   useEffect(() => {
     loadPresentations()
+    fetchDocumentCount()
+  }, [fetchDocumentCount])
+
+  // Keyboard shortcut: Cmd+B / Ctrl+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault()
+        setIsSidebarOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   const loadPresentations = async () => {
@@ -47,17 +70,11 @@ function MainApp() {
       const chats: PastChat[] = presos.map(p => ({
         id: p.id,
         title: p.main_topic,
-        timestamp: new Date(),
+        timestamp: p.created_at || new Date().toISOString(),
         presentationId: p.id
       }))
 
       setPastChats(chats)
-
-      if (presos.length > 0) {
-        const firstPresentation = presos[0]
-        setSelectedChatId(firstPresentation.id)
-        setCurrentPresentation(firstPresentation)
-      }
     } catch (error) {
       console.error('Failed to load presentations:', error)
     }
@@ -67,35 +84,43 @@ function MainApp() {
     console.log('Generating presentation:', { prompt, format, theme, useRag })
     setIsGenerating(true)
 
-    try {
+    const generatePromise = async () => {
       const fileType = format === 'TeX' ? 'pdf' : format.toLowerCase() as 'pptx' | 'pdf'
-
       const presentation_id = await presentationApi.createPresentation(prompt, fileType, theme, useRag)
       const presentation = await presentationApi.getPresentation(presentation_id.id)
 
-      setPresentations(prev => [presentation, ...(prev || [])])
+      setPresentations(prev => [{
+        id: presentation.id,
+        main_topic: presentation.main_topic,
+        file_type: presentation.file_type,
+        created_at: presentation.created_at,
+      }, ...(prev || [])])
 
       const newChat: PastChat = {
         id: presentation.id,
         title: prompt,
-        timestamp: new Date(),
+        timestamp: presentation.created_at || new Date().toISOString(),
         presentationId: presentation.id
       }
       setPastChats(prev => [newChat, ...prev.slice(0, 7)])
-
       setCurrentPresentation(presentation)
       setSelectedChatId(presentation.id)
+      setCurrentSlide(1)
 
-    } catch (error) {
-      console.error('Failed to generate presentation:', error)
-      alert('Failed to generate presentation. Please ensure the backend is running.')
-    } finally {
-      setIsGenerating(false)
+      return presentation
     }
+
+    toast.promise(generatePromise(), {
+      loading: 'Generating your presentation...',
+      success: (presentation) => `"${presentation.main_topic}" is ready!`,
+      error: (err) => err instanceof Error ? err.message : 'Failed to generate presentation',
+      finally: () => setIsGenerating(false),
+    })
   }
 
   const handleChatSelect = async (chatId: string) => {
     setSelectedChatId(chatId)
+    setCurrentSlide(1)
 
     const chat = pastChats.find(c => c.id === chatId)
     if (chat?.presentationId) {
@@ -133,20 +158,24 @@ function MainApp() {
     if (!currentPresentation) return
 
     setIsModifying(true)
-    try {
+
+    const modifyPromise = async () => {
       await presentationApi.updateSlide(currentPresentation.id, slideNumber, prompt)
       const updatedPresentation = await presentationApi.getPresentation(currentPresentation.id)
       setCurrentPresentation(updatedPresentation)
-    } catch (error) {
-      console.error('Failed to update slide:', error)
-      alert('Failed to update slide. Please try again.')
-    } finally {
-      setIsModifying(false)
+      return updatedPresentation
     }
+
+    toast.promise(modifyPromise(), {
+      loading: `Updating slide ${slideNumber}...`,
+      success: `Slide ${slideNumber} updated!`,
+      error: (err) => err instanceof Error ? err.message : 'Failed to update slide',
+      finally: () => setIsModifying(false),
+    })
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -154,6 +183,7 @@ function MainApp() {
         selectedChatId={selectedChatId}
         onChatSelect={handleChatSelect}
         onChatDelete={handleDeleteChat}
+        documentCount={documentCount}
       />
 
       <div
@@ -164,6 +194,8 @@ function MainApp() {
       >
         <Header
           presentationTitle={currentPresentation?.main_topic || ''}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         <div className="flex-1 flex overflow-hidden h-0">
@@ -172,6 +204,7 @@ function MainApp() {
               presentation={currentPresentation || undefined}
               currentSlide={currentSlide}
               onSlideChange={setCurrentSlide}
+              documentCount={documentCount}
               className="max-w-4xl w-full"
             />
           </div>
@@ -192,11 +225,8 @@ function MainApp() {
       <GenerateButton
         onGenerate={handleGenerate}
         isGenerating={isGenerating}
-      />
-
-      <LoadingOverlay
-        isVisible={isGenerating}
-        message="Generating your presentation..."
+        documentCount={documentCount}
+        onDocumentCountChange={fetchDocumentCount}
       />
     </div>
   )

@@ -1,6 +1,12 @@
 import React, { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { CloudUpload, CheckCircle, Error as ErrorIcon, Close } from '@mui/icons-material'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { 
+  CloudUploadIcon, 
+  CheckmarkCircle01Icon, 
+  AlertCircleIcon, 
+  Cancel01Icon 
+} from '@hugeicons/core-free-icons'
 import { cn } from '@/lib/utils'
 import { ragApi } from '@/services/api'
 
@@ -102,7 +108,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     <div
       {...getRootProps()}
       className={cn(
-        'relative border-2 border-dashed rounded-lg p-4 transition-all cursor-pointer',
+        'relative border-2 border-dashed rounded-md p-4 transition-all cursor-pointer',
         isDragActive && 'border-primary bg-primary/10',
         uploadState === 'idle' && 'border-border hover:border-primary/50',
         isProcessing && 'border-primary/50 bg-primary/5',
@@ -116,8 +122,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       <div className="flex items-center gap-3">
         {uploadState === 'idle' && (
           <>
-            <CloudUpload className="w-5 h-5 text-text-muted" />
-            <span className="text-sm text-text-muted">
+            <HugeiconsIcon icon={CloudUploadIcon} size={20} className="text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
               {isDragActive ? 'Drop file here' : 'Add context document'}
             </span>
           </>
@@ -126,7 +132,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
         {uploadState === 'uploading' && (
           <>
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-text truncate max-w-[200px]">
+            <span className="text-sm text-foreground truncate max-w-[200px]">
               Uploading {uploadedFile}...
             </span>
           </>
@@ -135,7 +141,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
         {uploadState === 'processing' && (
           <>
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-text truncate max-w-[200px]">
+            <span className="text-sm text-foreground truncate max-w-[200px]">
               Parsing document...
             </span>
           </>
@@ -143,24 +149,24 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
         
         {uploadState === 'success' && (
           <>
-            <CheckCircle className="w-5 h-5 text-accent" />
+            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} className="text-accent" />
             <span className="text-sm text-accent truncate max-w-[200px]">
               {uploadedFile} ready
             </span>
             <button onClick={handleClear} className="ml-auto">
-              <Close className="w-4 h-4 text-text-muted hover:text-text" />
+              <HugeiconsIcon icon={Cancel01Icon} size={16} className="text-muted-foreground hover:text-foreground" />
             </button>
           </>
         )}
         
         {uploadState === 'error' && (
           <>
-            <ErrorIcon className="w-5 h-5 text-destructive" />
+            <HugeiconsIcon icon={AlertCircleIcon} size={20} className="text-destructive" />
             <span className="text-sm text-destructive truncate max-w-[180px]">
               {errorMessage || 'Upload failed'}
             </span>
             <button onClick={handleClear} className="ml-auto">
-              <Close className="w-4 h-4 text-text-muted hover:text-text" />
+              <HugeiconsIcon icon={Cancel01Icon} size={16} className="text-muted-foreground hover:text-foreground" />
             </button>
           </>
         )}

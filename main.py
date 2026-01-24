@@ -236,27 +236,23 @@ async def create_presentation(
         )
 
 
-@app.get("/api/v1/presentations/")
+@app.get("/api/v1/presentations/", response_model=schemas.PresentationListResponse)
 def list_presentations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """
-    List all presentations with pagination
-    """
     presentations = crud.get_presentations(db, skip=skip, limit=limit)
-    return {
-        "presentations": [
-            {
-                "id": p.id,
-                "main_topic": p.main_topic,
-                "file_type": getattr(
-                    p, "file_type", "pdf"
-                ),  # Use getattr for backward compatibility
-            }
+    return schemas.PresentationListResponse(
+        presentations=[
+            schemas.PresentationListItem(
+                id=str(p.id),
+                main_topic=str(p.main_topic),
+                file_type=str(getattr(p, "file_type", "pdf")),
+                created_at=getattr(p, "created_at", None),
+            )
             for p in presentations
         ],
-        "skip": skip,
-        "limit": limit,
-        "total": len(presentations),
-    }
+        skip=skip,
+        limit=limit,
+        total=len(presentations),
+    )
 
 
 @app.get(
@@ -326,6 +322,7 @@ def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
         main_topic=str(db_presentation.main_topic),
         file_type=getattr(db_presentation, "file_type", "pdf"),
         slides=slides_response,
+        created_at=getattr(db_presentation, "created_at", None),
     )
 
 

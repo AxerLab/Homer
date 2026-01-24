@@ -12,8 +12,16 @@ export type SlideData = {
 export type Presentation = {
   id: string;
   main_topic: string;
-  file_type: 'pptx' | 'pdf';  // File type from backend
-  slides: SlideData[];  // Slide data from backend
+  file_type: 'pptx' | 'pdf';
+  slides: SlideData[];
+  created_at?: string;
+}
+
+export type PresentationListItem = {
+  id: string;
+  main_topic: string;
+  file_type: 'pptx' | 'pdf';
+  created_at?: string;
 }
 
 // Request/Response types directly from backend spec

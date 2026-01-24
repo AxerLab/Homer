@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { presentationApi } from '@/services/api';
-import type { Presentation } from '@/types/api';
+import type { PresentationListItem } from '@/types/api';
 
 interface PresentationListProps {
   limit?: number;
@@ -112,7 +112,7 @@ export const PresentationList: React.FC<PresentationListProps> = ({ limit = 100 
       </div>
 
       <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-        {presentations.slice().reverse().map((presentation: Presentation) => (
+        {presentations.slice().reverse().map((presentation: PresentationListItem) => (
           <div
             key={presentation.id}
             className="border border-border rounded p-4 hover:bg-background-elevated transition-colors"

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Close } from '@mui/icons-material';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { presentationApi, ragApi } from '@/services/api';
 import { DocumentAttachSelector } from '@/components/rag/DocumentAttachSelector';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import type { RAGDocumentStatus } from '@/types/api';
 
 interface PresentationCreationFormProps {
@@ -74,7 +77,7 @@ export const PresentationCreationForm: React.FC<
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="topic" className="block text-sm font-medium mb-1">
+        <label htmlFor="topic" className="block text-sm font-medium mb-1 text-foreground">
           Presentation Topic
         </label>
         <input
@@ -82,15 +85,15 @@ export const PresentationCreationForm: React.FC<
           id="topic"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          className="w-full p-2 border border-border rounded dark:bg-background-elevated"
+          className="w-full p-2 border border-border rounded-md bg-card text-foreground focus:outline-none focus:border-primary"
           placeholder="Enter your presentation topic..."
           disabled={isProcessing}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
-          Context Documents <span className="text-text-muted">(optional)</span>
+        <label className="block text-sm font-medium mb-2 text-foreground">
+          Context Documents <span className="text-muted-foreground">(optional)</span>
         </label>
         <DocumentAttachSelector
           selectedDocIds={selectedDocIds}
@@ -99,28 +102,29 @@ export const PresentationCreationForm: React.FC<
         {attachedDocs.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {attachedDocs.map(doc => (
-              <span
+              <Badge
                 key={doc.id}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-[#6366f1]/20 text-[#6366f1] text-xs rounded-full"
+                variant="secondary"
+                className="inline-flex items-center gap-1"
               >
                 {doc.filename}
                 <button
                   type="button"
                   onClick={() => removeAttachedDoc(doc.id)}
-                  className="hover:text-white transition-colors"
+                  className="hover:text-foreground transition-colors"
                 >
-                  <Close className="w-3 h-3" />
+                  <HugeiconsIcon icon={Cancel01Icon} size={12} />
                 </button>
-              </span>
+              </Badge>
             ))}
           </div>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Export Format</label>
+        <label className="block text-sm font-medium mb-1 text-foreground">Export Format</label>
         <div className="flex space-x-4">
-          <label className="inline-flex items-center">
+          <label className="inline-flex items-center text-foreground">
             <input
               type="radio"
               name="fileType"
@@ -131,7 +135,7 @@ export const PresentationCreationForm: React.FC<
             />
             PowerPoint (PPTX)
           </label>
-          <label className="inline-flex items-center">
+          <label className="inline-flex items-center text-foreground">
             <input
               type="radio"
               name="fileType"
@@ -146,43 +150,43 @@ export const PresentationCreationForm: React.FC<
       </div>
 
       <div>
-        <label htmlFor="theme" className="block text-sm font-medium mb-1">
+        <label htmlFor="theme" className="block text-sm font-medium mb-1 text-foreground">
           Theme
         </label>
         <select
           id="theme"
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
-          className="w-full p-2 border border-border rounded dark:bg-background-elevated"
+          className="w-full p-2 border border-border rounded-md bg-card text-foreground focus:outline-none focus:border-primary"
           disabled={isProcessing || fileType === 'pdf'}
         >
           <option value="default">Default</option>
           <option value="psychedelic_vibrant">Psychedelic Vibrant</option>
         </select>
         {fileType === 'pdf' && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Theme selection is only available for PowerPoint format
           </p>
         )}
       </div>
 
       {mutation.isError && (
-        <div className="text-error text-sm">
+        <div className="text-destructive text-sm">
           {mutation.error instanceof Error
             ? mutation.error.message
             : 'Failed to create presentation'}
         </div>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary disabled:opacity-50"
+        className="w-full"
         disabled={isProcessing || !topic.trim()}
       >
         {formStage === 'generating' 
           ? 'Generating presentation...' 
           : 'Generate Presentation'}
-      </button>
+      </Button>
     </form>
   );
 };
