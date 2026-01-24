@@ -8,7 +8,7 @@ import uuid
 import aiofiles
 import tempfile
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from backend.db import crud, models
 from backend.api import schemas
@@ -171,20 +171,58 @@ async def create_presentation(
                 convert_pptx_to_pdf(str(file_path), str(pdf_path))
 
         elif presentation.file_type == "pdf":
-            db_presentation = crud.create_presentation(
-                db=db,
-                main_topic=presentation.main_topic,
-                json_object=json_string,
-                file_type=presentation.file_type,
-                theme=presentation.theme,
-                storage_backend="local",
-            )
-            pdf_output_path = str(PDF_DIR / str(db_presentation.id))
-            await generate_tex_and_pdf(
-                generated_presentation,
-                tex_path=f"{pdf_output_path}.tex",
-                output_filename=pdf_output_path,
-            )
+            if use_azure:
+                storage_service = await AzureBlobService.get_instance()
+                presentation_id = str(uuid.uuid4())
+
+                result = await generate_tex_and_pdf(
+                    generated_presentation,
+                    return_bytes=True,
+                )
+                tex_bytes, pdf_bytes = cast(tuple[bytes, bytes], result)
+
+                tex_blob_path = f"tex/{presentation_id}.tex"
+                await storage_service.upload_presentation(
+                    tex_bytes,
+                    tex_blob_path,
+                    content_type="application/x-tex",
+                )
+
+                pdf_blob_path = f"pdf/{presentation_id}.pdf"
+                await storage_service.upload_presentation(
+                    pdf_bytes,
+                    pdf_blob_path,
+                    content_type="application/pdf",
+                )
+
+                db_presentation = models.Presentation(
+                    id=presentation_id,
+                    main_topic=presentation.main_topic,
+                    json_object=json_string,
+                    file_type=presentation.file_type,
+                    theme=presentation.theme,
+                    storage_backend="azure",
+                    pptx_blob_path=tex_blob_path,
+                    pdf_blob_path=pdf_blob_path,
+                )
+                db.add(db_presentation)
+                db.commit()
+                db.refresh(db_presentation)
+            else:
+                db_presentation = crud.create_presentation(
+                    db=db,
+                    main_topic=presentation.main_topic,
+                    json_object=json_string,
+                    file_type=presentation.file_type,
+                    theme=presentation.theme,
+                    storage_backend="local",
+                )
+                pdf_output_path = str(PDF_DIR / str(db_presentation.id))
+                await generate_tex_and_pdf(
+                    generated_presentation,
+                    tex_path=f"{pdf_output_path}.tex",
+                    output_filename=pdf_output_path,
+                )
 
         if db_presentation is None:
             raise HTTPException(status_code=500, detail="Failed to create presentation")

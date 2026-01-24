@@ -107,6 +107,7 @@ async def generate_tex_and_pdf(
     presentation: SlidePresentation,
     tex_path: str = "test.tex",
     output_filename: str | None = None,
+    return_bytes: bool = False,
 ):
     """Generate TEX file and PDF from a presentation object.
 
@@ -114,9 +115,11 @@ async def generate_tex_and_pdf(
         presentation: SlidePresentation object containing slides
         tex_path: Path for the TEX file (default: "test.tex")
         output_filename: Optional output filename/path for the PDF
+        return_bytes: If True, return (tex_bytes, pdf_bytes) instead of writing to file
 
     Returns:
-        Path to the generated PDF file
+        If return_bytes=False: Path to the generated PDF file
+        If return_bytes=True: tuple of (tex_content: bytes, pdf_content: bytes)
     """
 
     # Determine the base name for files from tex_path or use output_filename if provided
@@ -308,10 +311,15 @@ async def generate_tex_and_pdf(
                     pass
 
         if response.status_code == 200:
-            pdf_path = output_dir / f"{pdf_basename}.pdf"
-            with open(pdf_path, "wb") as f:
-                f.write(response.content)
-            return pdf_path.resolve()
+            if return_bytes:
+                tex_content = tex_file_path.read_bytes()
+                tex_file_path.unlink(missing_ok=True)
+                return tex_content, response.content
+            else:
+                pdf_path = output_dir / f"{pdf_basename}.pdf"
+                with open(pdf_path, "wb") as f:
+                    f.write(response.content)
+                return pdf_path.resolve()
         else:
             print(f"TeX Service Error: {response.status_code} - {response.text}")
             raise Exception(f"TeX Service failed: {response.text}")
