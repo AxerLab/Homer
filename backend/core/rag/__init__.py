@@ -1,6 +1,5 @@
-"""RAG Service Module - Document ingestion and retrieval using RAG-Anything"""
+"""RAG Service Client Module - HTTP client for RAG microservice communication"""
 
-from .service import RAGService, get_rag_service, rag_service
-from .config import RAGConfig, rag_config
+from .client import RAGServiceClient, rag_client
 
-__all__ = ["RAGService", "get_rag_service", "rag_service", "RAGConfig", "rag_config"]
+__all__ = ["RAGServiceClient", "rag_client"]

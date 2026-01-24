@@ -9,10 +9,13 @@ services:
     env_file:
       - path: .env
         required: false  # Optional for CI builds
+    environment:
+      - RAG_SERVICE_URL=http://rag-service:8002
     depends_on:
       - db
       - tex-service
       - pptx-service
+      - rag-service
     restart: unless-stopped
 
   frontend:
@@ -56,5 +59,24 @@ services:
       - '5001:5001'
     restart: unless-stopped
 
+  rag-service:
+    image: pptai-rag-service:latest
+    build:
+      context: ./rag_service
+      dockerfile: Dockerfile
+    ports:
+      - '8002:8002'
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - rag_storage:/app/rag_storage
+      - rag_parsed:/app/rag_parsed
+      - rag_uploads:/app/rag_uploads
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  rag_storage:
+  rag_parsed:
+  rag_uploads:

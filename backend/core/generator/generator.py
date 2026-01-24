@@ -2,7 +2,7 @@ from ..agent.agent import agent, correction_agent
 from ...config.logs import logger
 from ..memory.global_memory import global_memory
 from ..models.presentation.presentation import SlidePresentation
-from ..rag.service import rag_service
+from ..rag.client import rag_client
 from pydantic_ai import ModelHTTPError, UnexpectedModelBehavior, capture_run_messages
 from pydantic_ai.messages import ModelResponse, ToolCallPart, TextPart
 import json
@@ -43,11 +43,15 @@ def _build_retry_prompt_for_attempt(
     Uses TOON format to reduce token count.
     """
     try:
-        parsed = json.loads(failed_attempt_json) if isinstance(failed_attempt_json, str) else failed_attempt_json
-        toon_attempt = toons.dumps(parsed) # type: ignore
+        parsed = (
+            json.loads(failed_attempt_json)
+            if isinstance(failed_attempt_json, str)
+            else failed_attempt_json
+        )
+        toon_attempt = toons.dumps(parsed)  # type: ignore
     except (json.JSONDecodeError, TypeError, Exception):
         toon_attempt = failed_attempt_json
-    
+
     if attempt == 0:
         # First attempt: full content, no truncation
         return (
@@ -68,10 +72,7 @@ def _build_retry_prompt_for_attempt(
         truncated_attempt = toon_attempt[:3000]
         if len(toon_attempt) > 3000:
             truncated_attempt += "\n..."
-        return (
-            f"Fix this:\n{truncated_attempt}\n\n"
-            "Return valid presentation JSON."
-        )
+        return f"Fix this:\n{truncated_attempt}\n\nReturn valid presentation JSON."
 
 
 def extract_unvalidated_output(messages: list) -> dict:
@@ -265,15 +266,19 @@ async def _generate_presentation_impl(
         attempts = 3
         current_retry_prompt = retry_prompt
         use_message_history = True
-        
+
         for attempt in range(attempts):
             try:
                 logger.debug(
                     f"Retrying with correction agent, attempt {attempt + 1} of {attempts}"
                 )
-                
-                history = global_memory.get_history(user_prompt=prompt_key) if use_message_history else None
-                
+
+                history = (
+                    global_memory.get_history(user_prompt=prompt_key)
+                    if use_message_history
+                    else None
+                )
+
                 if use_async:
                     agent_result = await correction_agent.run(
                         current_retry_prompt,
@@ -287,9 +292,11 @@ async def _generate_presentation_impl(
                 break
             except Exception as e:
                 logger.error(f"Error during correction attempt {attempt + 1}: {e}")
-                
+
                 if _is_token_limit_error(e):
-                    logger.warning("Token limit exceeded, reducing prompt size for next attempt")
+                    logger.warning(
+                        "Token limit exceeded, reducing prompt size for next attempt"
+                    )
                     use_message_history = False
                     current_retry_prompt = _build_retry_prompt_for_attempt(
                         failed_attempt_json,
@@ -297,8 +304,10 @@ async def _generate_presentation_impl(
                         original_prompt,
                         attempt + 1,
                     )
-                    logger.debug(f"Strategy for attempt {attempt + 2}: prompt length={len(current_retry_prompt)}, no history")
-                
+                    logger.debug(
+                        f"Strategy for attempt {attempt + 2}: prompt length={len(current_retry_prompt)}, no history"
+                    )
+
                 continue
 
     if agent_result is None:
@@ -319,8 +328,7 @@ async def generate_presentation_with_rag(
 
     if use_rag:
         try:
-            await rag_service.initialize()
-            rag_context = await rag_service.get_context_for_topic(original_prompt)
+            rag_context = await rag_client.get_context_for_topic(original_prompt)
             if rag_context and rag_context.strip():
                 logger.info(f"RAG context retrieved: {len(rag_context)} chars")
         except Exception as e:

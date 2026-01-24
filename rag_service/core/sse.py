@@ -45,7 +45,9 @@ class SSEConnectionManager:
             self._connections[doc_id].append(queue)
             return queue
 
-    async def disconnect(self, doc_id: str, queue: asyncio.Queue[ProgressEvent]) -> None:
+    async def disconnect(
+        self, doc_id: str, queue: asyncio.Queue[ProgressEvent]
+    ) -> None:
         async with self._lock:
             if doc_id in self._connections:
                 try:
@@ -67,16 +69,14 @@ class SSEConnectionManager:
     def get_progress_callback(self, doc_id: str) -> ProgressCallback:
         def callback(doc_id: str, progress: int, stage: str, message: str) -> None:
             event = ProgressEvent(
-                doc_id=doc_id,
-                progress=progress,
-                stage=stage,
-                message=message
+                doc_id=doc_id, progress=progress, stage=stage, message=message
             )
             try:
                 loop = asyncio.get_running_loop()
                 asyncio.run_coroutine_threadsafe(self.broadcast(event), loop)
             except RuntimeError:
                 pass
+
         return callback
 
     async def send_progress(
@@ -85,14 +85,14 @@ class SSEConnectionManager:
         progress: int,
         stage: ProgressStage,
         message: str,
-        error: Optional[str] = None
+        error: Optional[str] = None,
     ) -> None:
         event = ProgressEvent(
             doc_id=doc_id,
             progress=progress,
             stage=stage.value,
             message=message,
-            error=error
+            error=error,
         )
         await self.broadcast(event)
 
@@ -101,8 +101,7 @@ sse_manager = SSEConnectionManager()
 
 
 async def sse_event_generator(
-    doc_id: str,
-    manager: SSEConnectionManager
+    doc_id: str, manager: SSEConnectionManager
 ) -> AsyncGenerator[str, None]:
     queue = await manager.connect(doc_id)
     try:
@@ -110,8 +109,11 @@ async def sse_event_generator(
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=30.0)
                 yield event.to_sse()
-                
-                if event.stage in (ProgressStage.COMPLETED.value, ProgressStage.FAILED.value):
+
+                if event.stage in (
+                    ProgressStage.COMPLETED.value,
+                    ProgressStage.FAILED.value,
+                ):
                     break
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"

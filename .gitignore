@@ -225,5 +225,7 @@ generated_files/
 docs/
 !backend/templates/*.pptx
 
-# RAG
-rag_*/
+# RAG storage directories
+rag_storage/
+rag_uploads/
+rag_parsed/

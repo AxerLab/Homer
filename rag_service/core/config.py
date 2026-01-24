@@ -63,7 +63,7 @@ class RAGConfig:
     )
     max_file_size: int = 50 * 1024 * 1024  # 50MB
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Ensure directories exist"""
         self.working_dir = Path(self.working_dir)
         self.parser_output_dir = Path(self.parser_output_dir)

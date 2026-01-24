@@ -1,11 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.orm import Session
 import json
 import uuid
-import aiofiles
 import tempfile
 from pathlib import Path
 from typing import Literal, cast
@@ -27,8 +26,7 @@ from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
 from backend.config.logs import logger
 from backend.config.storage_config import storage_config
 from backend.core.storage import AzureBlobService
-from backend.core.rag.service import rag_service, DocumentStatus
-from backend.core.rag.config import rag_config
+from backend.core.rag.client import rag_client
 from backend.core.rag.schemas import (
     RAGQueryRequest,
     RAGQueryResponse,
@@ -40,8 +38,7 @@ from backend.core.rag.schemas import (
     RAGDocumentList,
     RAGDocumentDeleteResponse,
 )
-from backend.core.rag.sse import sse_manager, sse_event_generator, ProgressStage
-import logfire
+import httpx
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -77,9 +74,6 @@ if OUTPUT_DIR.exists():
         name="generated_files",
     )
 
-# logfire.configure()
-# logfire.instrument_pydantic_ai()
-
 
 @app.post("/api/v1/presentations/", response_model=schemas.PresentationCreateResponse)
 async def create_presentation(
@@ -87,7 +81,9 @@ async def create_presentation(
 ):
     try:
         generated_presentation = await generate_presentation_with_rag(
-            presentation.main_topic, presentation.main_topic, use_rag=presentation.use_rag
+            presentation.main_topic,
+            presentation.main_topic,
+            use_rag=presentation.use_rag,
         )
 
         json_string = generated_presentation.model_dump_json()
@@ -117,11 +113,15 @@ async def create_presentation(
                         content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     )
 
-                    with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as tmp:
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".pptx", delete=False
+                    ) as tmp:
                         tmp.write(pptx_bytes.getvalue())
                         tmp_pptx_path = tmp.name
 
-                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".pdf", delete=False
+                    ) as tmp_pdf:
                         tmp_pdf_path = tmp_pdf.name
 
                     convert_pptx_to_pdf(tmp_pptx_path, tmp_pdf_path)
@@ -274,11 +274,12 @@ def get_presentation(presentation_id: str, db: Session = Depends(get_db)):
 
     # Parse slide data from stored JSON
     slides_response = []
-    if db_presentation.json_object:
+    json_obj = db_presentation.json_object
+    if json_obj is not None:
         try:
             # Use json.loads instead of model_validate_json to avoid strict validation
             # Some stored presentations may not pass validation (e.g., missing title slide)
-            presentation_dict = json.loads(str(db_presentation.json_object))
+            presentation_dict = json.loads(str(json_obj))
             slides_list = presentation_dict.get("slides", [])
 
             for slide in slides_list:
@@ -530,78 +531,38 @@ def health_check():
     return {"status": "healthy"}
 
 
-# ============ RAG Endpoints ============
+# ============ RAG Endpoints (Proxy to RAG Service) ============
 
 
 @app.post("/api/v1/rag/upload", response_model=RAGDocumentCreate)
-async def upload_document(
-    background_tasks: BackgroundTasks, file: UploadFile = File(...)
-):
+async def upload_document(file: UploadFile = File(...)):
+    """Upload a document to the RAG service"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    file_ext = Path(file.filename).suffix.lower()
-    if file_ext not in rag_config.allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File type {file_ext} not supported. Allowed: {rag_config.allowed_extensions}",
-        )
-
-    doc_id = str(uuid.uuid4())
-    file_path = rag_config.upload_dir / f"{doc_id}{file_ext}"
-
     try:
-        async with aiofiles.open(file_path, "wb") as f:
-            content = await file.read()
-            file_size = len(content)
-            if file_size > rag_config.max_file_size:
-                raise HTTPException(status_code=400, detail="File too large (max 50MB)")
-            await f.write(content)
-    except HTTPException:
-        raise
+        content = await file.read()
+        result = await rag_client.upload_document(content, file.filename)
+        return RAGDocumentCreate(**result)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"RAG service error: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to save uploaded file: {e}")
-        raise HTTPException(status_code=500, detail="Failed to save file")
-
-    rag_service.register_document_with_metadata(
-        doc_id=doc_id,
-        filename=file.filename,
-        file_path=str(file_path),
-        file_size_bytes=file_size
-    )
-
-    async def process_doc():
-        try:
-            await sse_manager.send_progress(doc_id, 5, ProgressStage.PENDING, "Initializing RAG service")
-            await rag_service.initialize()
-            
-            async def on_progress(progress: int, message: str):
-                stage = ProgressStage.PARSING if progress < 50 else ProgressStage.EMBEDDING if progress < 90 else ProgressStage.INDEXING
-                await sse_manager.send_progress(doc_id, progress, stage, message)
-            
-            await sse_manager.send_progress(doc_id, 10, ProgressStage.PARSING, "Starting document processing")
-            await rag_service.process_document(str(file_path), doc_id=doc_id, filename=file.filename)
-            await sse_manager.send_progress(doc_id, 100, ProgressStage.COMPLETED, "Processing complete")
-            logger.info(f"Document processed: {doc_id}")
-        except Exception as e:
-            logger.error(f"Background processing failed for {doc_id}: {e}")
-            await sse_manager.send_progress(doc_id, 0, ProgressStage.FAILED, "Processing failed", error=str(e))
-
-    background_tasks.add_task(process_doc)
-
-    return RAGDocumentCreate(id=doc_id, filename=file.filename, status="processing")
+        logger.error(f"Failed to upload document: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @app.post("/api/v1/rag/query", response_model=RAGQueryResponse)
 async def query_rag(request: RAGQueryRequest):
+    """Query the RAG knowledge base"""
     try:
-        await rag_service.initialize()
-        answer = await rag_service.query(
+        result = await rag_client.query(
             question=request.question, mode=request.mode, top_k=request.top_k
         )
-        return RAGQueryResponse(
-            answer=answer, question=request.question, mode=request.mode
-        )
+        return RAGQueryResponse(**result)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"RAG query failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         logger.error(f"RAG query failed: {e}")
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
@@ -609,12 +570,13 @@ async def query_rag(request: RAGQueryRequest):
 
 @app.post("/api/v1/rag/context", response_model=RAGContextResponse)
 async def get_rag_context(request: RAGContextRequest):
+    """Get context for a topic from the RAG knowledge base"""
     try:
-        await rag_service.initialize()
-        context = await rag_service.get_context_for_topic(
-            topic=request.topic, mode=request.mode
-        )
-        return RAGContextResponse(context=context, topic=request.topic)
+        result = await rag_client.get_context(topic=request.topic, mode=request.mode)
+        return RAGContextResponse(**result)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"RAG context retrieval failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
     except Exception as e:
         logger.error(f"RAG context retrieval failed: {e}")
         raise HTTPException(
@@ -624,84 +586,87 @@ async def get_rag_context(request: RAGContextRequest):
 
 @app.get("/api/v1/rag/status")
 async def rag_status():
-    return rag_service.get_config_info()
+    """Get RAG service status"""
+    try:
+        return await rag_client.get_status()
+    except httpx.HTTPStatusError as e:
+        logger.error(f"RAG status check failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"RAG status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {str(e)}")
 
 
-@app.get("/api/v1/rag/document/{doc_id}/status", response_model=RAGDocumentStatusResponse)
+@app.get(
+    "/api/v1/rag/document/{doc_id}/status", response_model=RAGDocumentStatusResponse
+)
 async def get_document_status(doc_id: str):
-    doc_info = rag_service.get_document_status(doc_id)
-    if doc_info is None:
-        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
-    
-    return RAGDocumentStatusResponse(
-        id=doc_info.doc_id,
-        filename=doc_info.filename,
-        status=doc_info.status.value,
-        progress=doc_info.progress,
-        progress_message=doc_info.progress_message,
-        error=doc_info.error,
-        started_at=doc_info.started_at.isoformat() if doc_info.started_at else None,
-        completed_at=doc_info.completed_at.isoformat() if doc_info.completed_at else None,
-        file_size_bytes=doc_info.file_size_bytes,
-        file_extension=doc_info.file_extension,
-    )
+    """Get the processing status of a document"""
+    try:
+        result = await rag_client.get_document_status(doc_id)
+        return RAGDocumentStatusResponse(**result)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+        logger.error(f"Document status check failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"Document status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {str(e)}")
 
 
 @app.get("/api/v1/rag/document/{doc_id}/progress")
 async def stream_document_progress(doc_id: str):
-    doc_info = rag_service.get_document_status(doc_id)
-    if doc_info is None:
-        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
-    
-    return StreamingResponse(
-        sse_event_generator(doc_id, sse_manager),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        }
-    )
+    """Stream document processing progress via SSE"""
+    try:
+        return StreamingResponse(
+            rag_client.stream_document_progress(doc_id),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"Progress streaming failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Streaming failed: {str(e)}")
 
 
 @app.get("/api/v1/rag/documents", response_model=RAGDocumentList)
 async def list_documents():
-    documents = rag_service.list_documents()
-    return RAGDocumentList(
-        documents=[
-            RAGDocumentResponse(
-                id=doc.doc_id,
-                filename=doc.filename,
-                file_extension=doc.file_extension,
-                file_size_bytes=doc.file_size_bytes,
-                status=doc.status.value,
-                progress=doc.progress,
-                progress_message=doc.progress_message,
-                error=doc.error,
-                started_at=doc.started_at.isoformat() if doc.started_at else None,
-                completed_at=doc.completed_at.isoformat() if doc.completed_at else None,
-            )
-            for doc in documents
-        ],
-        total=len(documents)
-    )
+    """List all documents in the RAG service"""
+    try:
+        result = await rag_client.list_documents()
+        return RAGDocumentList(**result)
+    except httpx.HTTPStatusError as e:
+        logger.error(f"Document list failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"Document list failed: {e}")
+        raise HTTPException(status_code=500, detail=f"List failed: {str(e)}")
 
 
 @app.delete("/api/v1/rag/document/{doc_id}", response_model=RAGDocumentDeleteResponse)
 async def delete_document(doc_id: str):
-    doc_info = rag_service.get_document_status(doc_id)
-    if doc_info is None:
-        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
-    
-    if doc_info.status == DocumentStatus.PROCESSING:
-        raise HTTPException(
-            status_code=400, 
-            detail="Cannot delete document while processing. Wait for completion."
-        )
-    
-    deleted = rag_service.delete_document(doc_id)
-    return RAGDocumentDeleteResponse(
-        id=doc_id,
-        deleted=deleted,
-        message="Document removed from library. Note: Content may remain in knowledge graph until server restart."
-    )
+    """Delete a document from the RAG service"""
+    try:
+        result = await rag_client.delete_document(doc_id)
+        return RAGDocumentDeleteResponse(**result)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+        if e.response.status_code == 400:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete document while processing. Wait for completion.",
+            )
+        logger.error(f"Document delete failed: {e}")
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"Document delete failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")

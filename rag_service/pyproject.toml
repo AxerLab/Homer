@@ -1,0 +1,30 @@
+[project]
+name = "rag-service"
+version = "0.1.0"
+description = "RAG microservice for document ingestion and retrieval"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=22.0,<25.0",
+    "colorlog>=6.9.0",
+    "fastapi>=0.121.2",
+    "httpx>=0.28.1",
+    "huggingface_hub>=0.30.0",
+    "numpy>=1.26.0",
+    "pydantic>=2.11.7",
+    "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.20",
+    "raganything>=1.2.8",
+    "mineru>=2.7.0",
+    "uvicorn>=0.35.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=9.0.2",
+]

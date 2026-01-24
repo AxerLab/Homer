@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentStatus(str, Enum):
     """Status of document processing"""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -27,6 +28,7 @@ class DocumentStatus(str, Enum):
 @dataclass
 class DocumentProcessingInfo:
     """Tracks the processing status of a document"""
+
     doc_id: str
     filename: str
     status: DocumentStatus = DocumentStatus.PENDING
@@ -55,27 +57,24 @@ class RAGService:
             cls._documents_processed = cls._check_existing_data()
             cls._document_status = {}
         return cls._instance
-    
+
     def register_document(self, doc_id: str, filename: str) -> DocumentProcessingInfo:
         """Register a new document for processing tracking"""
         info = DocumentProcessingInfo(
             doc_id=doc_id,
             filename=filename,
             status=DocumentStatus.PENDING,
-            started_at=datetime.now()
+            started_at=datetime.now(),
         )
         self._document_status[doc_id] = info
         return info
-    
+
     def get_document_status(self, doc_id: str) -> Optional[DocumentProcessingInfo]:
         """Get the processing status of a document"""
         return self._document_status.get(doc_id)
-    
+
     def _update_document_status(
-        self, 
-        doc_id: str, 
-        status: DocumentStatus, 
-        error: Optional[str] = None
+        self, doc_id: str, status: DocumentStatus, error: Optional[str] = None
     ) -> None:
         """Update the status of a document"""
         if doc_id in self._document_status:
@@ -86,10 +85,7 @@ class RAGService:
                 self._document_status[doc_id].completed_at = datetime.now()
 
     def update_document_progress(
-        self,
-        doc_id: str,
-        progress: int,
-        message: str = ""
+        self, doc_id: str, progress: int, message: str = ""
     ) -> None:
         if doc_id in self._document_status:
             self._document_status[doc_id].progress = min(100, max(0, progress))
@@ -101,9 +97,9 @@ class RAGService:
     def delete_document(self, doc_id: str) -> bool:
         if doc_id not in self._document_status:
             return False
-        
+
         doc_info = self._document_status[doc_id]
-        
+
         if doc_info.file_path:
             try:
                 file_path = Path(doc_info.file_path)
@@ -112,19 +108,15 @@ class RAGService:
                     logger.info(f"Deleted file: {file_path}")
             except Exception as e:
                 logger.warning(f"Failed to delete file {doc_info.file_path}: {e}")
-        
+
         del self._document_status[doc_id]
         logger.info(f"Removed document from registry: {doc_id}")
         return True
 
     def register_document_with_metadata(
-        self,
-        doc_id: str,
-        filename: str,
-        file_path: str,
-        file_size_bytes: int
+        self, doc_id: str, filename: str, file_path: str, file_size_bytes: int
     ) -> DocumentProcessingInfo:
-        file_extension = Path(filename).suffix.lstrip('.').lower()
+        file_extension = Path(filename).suffix.lstrip(".").lower()
         info = DocumentProcessingInfo(
             doc_id=doc_id,
             filename=filename,
@@ -132,7 +124,7 @@ class RAGService:
             started_at=datetime.now(),
             file_path=file_path,
             file_size_bytes=file_size_bytes,
-            file_extension=file_extension
+            file_extension=file_extension,
         )
         self._document_status[doc_id] = info
         return info
@@ -200,20 +192,20 @@ class RAGService:
             Dict with processing results
         """
         rag = await self._ensure_initialized()
-        
+
         def emit_progress(progress: int, message: str) -> None:
             if doc_id:
                 self.update_document_progress(doc_id, progress, message)
             if on_progress:
                 on_progress(progress, message)
-        
+
         if doc_id and doc_id in self._document_status:
             self._update_document_status(doc_id, DocumentStatus.PROCESSING)
             emit_progress(5, "Starting document processing")
 
         try:
             emit_progress(10, "Parsing document")
-            
+
             await rag.process_document_complete(
                 file_path=file_path,
                 output_dir=str(rag_config.parser_output_dir),
@@ -222,24 +214,24 @@ class RAGService:
                 display_stats=False,
                 backend="pipeline",
             )
-            
+
             emit_progress(90, "Finalizing knowledge graph")
             self._documents_processed = True
-            
+
             if doc_id:
                 self._update_document_status(doc_id, DocumentStatus.COMPLETED)
                 emit_progress(100, "Processing complete")
-            
+
             logger.info(f"Document processed successfully: {file_path}")
             return {"success": True, "file_path": file_path, "doc_id": doc_id}
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Failed to process document {file_path}: {error_msg}")
-            
+
             # Update status to failed
             if doc_id:
                 self._update_document_status(doc_id, DocumentStatus.FAILED, error_msg)
-            
+
             return {"success": False, "error": error_msg, "file_path": file_path}
 
     async def query(
