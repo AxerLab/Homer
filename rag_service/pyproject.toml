@@ -16,6 +16,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "raganything>=1.2.8",
     "mineru>=2.7.0",
+    "docling>=2.0.0",
     "uvicorn>=0.35.0",
 ]
 

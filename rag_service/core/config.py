@@ -37,9 +37,11 @@ class RAGConfig:
         default_factory=lambda: int(os.getenv("RAG_EMBEDDING_DIM", "384"))
     )
 
-    # Parser Configuration
-    parser: str = "mineru"  # or "docling"
-    parse_method: str = "auto"  # auto, ocr, txt
+    # Parser Configuration (switch via RAG_PARSER env var)
+    parser: str = field(default_factory=lambda: os.getenv("RAG_PARSER", "docling"))
+    parse_method: str = field(
+        default_factory=lambda: os.getenv("RAG_PARSE_METHOD", "auto")
+    )
 
     # Processing options
     enable_image_processing: bool = True
