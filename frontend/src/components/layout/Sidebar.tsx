@@ -15,7 +15,18 @@ import type { PastChat } from '@/types'
 
 const formatRelativeTime = (date: Date | string): string => {
   const now = new Date()
-  const dateObj = new Date(date)
+  
+  // Parse the date, handling UTC timestamps from backend
+  // Backend sends UTC times without 'Z' suffix, so we need to handle both cases
+  let dateObj: Date
+  if (typeof date === 'string') {
+    // If the string doesn't end with 'Z' or timezone offset, treat it as UTC
+    const hasTimezone = /([+-]\d{2}:?\d{2}|Z)$/.test(date)
+    dateObj = hasTimezone ? new Date(date) : new Date(date + 'Z')
+  } else {
+    dateObj = date
+  }
+  
   const diff = now.getTime() - dateObj.getTime()
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)

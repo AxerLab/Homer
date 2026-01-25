@@ -8,6 +8,7 @@ dependencies = [
     "aiofiles>=22.0,<25.0",
     "colorlog>=6.9.0",
     "fastapi>=0.121.2",
+    "fastembed>=0.3.0",
     "httpx>=0.28.1",
     "huggingface_hub>=0.30.0",
     "numpy>=1.26.0",
