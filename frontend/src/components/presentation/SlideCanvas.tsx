@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { SimplifiedDocumentViewer } from '../viewer/SimplifiedDocumentViewer'
 import { OnboardingFlow } from '../onboarding/OnboardingStep'
+import { ParticleBackground } from '../ui/ParticleBackground'
 import type { Presentation } from '@/types/api'
 
 interface SlideCanvasProps {
@@ -22,18 +23,18 @@ interface SlideCanvasProps {
 
 const onboardingSteps = [
   {
-    icon: <HugeiconsIcon icon={Folder01Icon} size={16} />,
+    icon: <HugeiconsIcon icon={Folder01Icon} size={20} />,
     title: 'Add Your Documents',
     subtitle: 'Upload PDFs, docs, or notes to give AI your context',
     badge: 'Optional'
   },
   {
-    icon: <HugeiconsIcon icon={TextIcon} size={16} />,
+    icon: <HugeiconsIcon icon={TextIcon} size={20} />,
     title: 'Describe Your Topic',
     subtitle: 'Tell AI what presentation you need in natural language',
   },
   {
-    icon: <HugeiconsIcon icon={PresentationBarChart01Icon} size={16} />,
+    icon: <HugeiconsIcon icon={PresentationBarChart01Icon} size={20} />,
     title: 'Get Your Slides',
     subtitle: 'AI generates a complete presentation in seconds',
   }
@@ -62,28 +63,29 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
 
   return (
     <div className={cn(
-      'bg-gradient-to-b from-card to-background rounded-lg shadow-2xl aspect-[16/10] flex items-center justify-center p-8',
+      'bg-gradient-to-b from-card to-background flex items-center justify-center p-8 w-full h-full relative overflow-hidden',
       className
     )}>
+      <ParticleBackground className="absolute inset-0 pointer-events-none" />
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="max-w-md w-full text-center"
+        className="max-w-2xl w-full text-center relative z-10"
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="mb-6"
+          className="mb-10"
         >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-            <HugeiconsIcon icon={SparklesIcon} size={32} className="text-primary" />
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-[#1a1a2e] flex items-center justify-center">
+            <HugeiconsIcon icon={SparklesIcon} size={48} className="text-primary" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
+          <h2 className="text-4xl font-semibold text-foreground mb-4">
             Create Your First Presentation
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             AI-powered slides from your ideas and documents
           </p>
         </motion.div>
@@ -103,7 +105,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
         >
           <a
             href="#/documents"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            className="text-base text-muted-foreground hover:text-primary transition-colors"
           >
             {documentCount > 0 
               ? `${documentCount} document${documentCount > 1 ? 's' : ''} in library`

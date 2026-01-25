@@ -41,7 +41,8 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const fetchDocumentCount = useCallback(async () => {
     try {
       const response = await ragApi.listDocuments()
-      setLocalDocCount(response.documents.length)
+      const completedDocs = response.documents.filter(doc => doc.status === 'completed')
+      setLocalDocCount(completedDocs.length)
     } catch {
       setLocalDocCount(0)
     }
@@ -86,7 +87,8 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const handleUploadComplete = () => {
     fetchDocumentCount()
     onDocumentCountChange?.()
-    setUseRag(true)
+    // Don't auto-enable RAG - document is still processing at this point
+    // User can manually enable once document status is 'completed'
   }
 
   return (

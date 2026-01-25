@@ -29,16 +29,16 @@ export const OnboardingStep: React.FC<OnboardingStepProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: stepNumber * 0.1, duration: 0.3 }}
       className={cn(
-        'flex items-start gap-4 p-4 rounded-lg transition-all duration-200',
-        isActive && 'bg-primary/10 border border-primary/30',
+        'flex items-start gap-6 p-6 rounded-lg transition-all duration-200',
+        isActive && 'bg-primary/20 border border-primary/30',
         isCompleted && 'opacity-60',
-        !isActive && !isCompleted && 'bg-muted/30',
+        !isActive && !isCompleted && 'bg-[#1a1a24]',
         className
       )}
     >
       <div
         className={cn(
-          'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors',
+          'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold transition-colors',
           isActive && 'bg-primary text-primary-foreground',
           isCompleted && 'bg-accent text-accent-foreground',
           !isActive && !isCompleted && 'bg-muted text-muted-foreground'
@@ -48,7 +48,7 @@ export const OnboardingStep: React.FC<OnboardingStepProps> = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-2">
           <div className={cn(
             'transition-colors',
             isActive ? 'text-primary' : 'text-muted-foreground'
@@ -56,7 +56,7 @@ export const OnboardingStep: React.FC<OnboardingStepProps> = ({
             {icon}
           </div>
           <h3 className={cn(
-            'font-medium text-sm',
+            'font-medium text-base',
             isActive ? 'text-foreground' : 'text-muted-foreground'
           )}>
             {title}
@@ -67,7 +67,7 @@ export const OnboardingStep: React.FC<OnboardingStepProps> = ({
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">
+        <p className="text-sm text-muted-foreground leading-relaxed">
           {subtitle}
         </p>
       </div>
@@ -94,7 +94,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   className
 }) => {
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-5', className)}>
       {steps.map((step, index) => (
         <OnboardingStep
           key={index}

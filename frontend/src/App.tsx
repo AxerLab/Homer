@@ -199,13 +199,13 @@ function MainApp() {
         />
 
         <div className="flex-1 flex overflow-hidden h-0">
-          <div className="flex-1 px-8 py-4 flex items-center justify-center">
+          <div className={`flex-1 flex items-center justify-center ${currentPresentation ? 'px-8 py-4' : ''}`}>
             <SlideCanvas
               presentation={currentPresentation || undefined}
               currentSlide={currentSlide}
               onSlideChange={setCurrentSlide}
               documentCount={documentCount}
-              className="max-w-4xl w-full"
+              className="w-full h-full"
             />
           </div>
 
