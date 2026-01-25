@@ -37,8 +37,8 @@ export const DocumentLibrary: React.FC = () => {
   useEffect(() => {
     if (!loading) return
 
-    const phaseTimers: NodeJS.Timeout[] = []
-    let progressInterval: NodeJS.Timeout
+    const phaseTimers: ReturnType<typeof setTimeout>[] = []
+    let progressInterval: ReturnType<typeof setInterval>
 
     phaseTimers.push(setTimeout(() => {
       setLoadingPhase('warming')
