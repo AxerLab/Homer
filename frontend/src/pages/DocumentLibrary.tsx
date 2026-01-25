@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { motion } from 'framer-motion'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CloudUploadIcon, Folder01Icon } from '@hugeicons/core-free-icons'
+import { CloudUploadIcon, Folder01Icon, ArrowLeft01Icon } from '@hugeicons/core-free-icons'
 import { DocumentProgressCard } from '@/components/rag/DocumentProgressCard'
 import { ragApi } from '@/services/api'
 import { subscribeToDocumentProgress } from '@/services/sse'
@@ -14,6 +15,8 @@ export const DocumentLibrary: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set())
+  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'warming' | 'ready'>('connecting')
+  const [loadingProgress, setLoadingProgress] = useState(0)
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -30,6 +33,35 @@ export const DocumentLibrary: React.FC = () => {
   useEffect(() => {
     fetchDocuments()
   }, [fetchDocuments])
+
+  useEffect(() => {
+    if (!loading) return
+
+    const phaseTimers: NodeJS.Timeout[] = []
+    let progressInterval: NodeJS.Timeout
+
+    phaseTimers.push(setTimeout(() => {
+      setLoadingPhase('warming')
+    }, 3000))
+
+    phaseTimers.push(setTimeout(() => {
+      setLoadingPhase('ready')
+    }, 10000))
+
+    progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 95) return prev
+        const remaining = 95 - prev
+        const increment = Math.max(0.5, remaining * 0.08)
+        return Math.min(95, prev + increment)
+      })
+    }, 200)
+
+    return () => {
+      phaseTimers.forEach(clearTimeout)
+      clearInterval(progressInterval)
+    }
+  }, [loading])
 
   const handleUpload = useCallback(async (files: File[]) => {
     for (const file of files) {
@@ -123,10 +155,93 @@ export const DocumentLibrary: React.FC = () => {
   })
 
   if (loading) {
+    const phaseConfig = {
+      connecting: {
+        message: 'Connecting to knowledge base...',
+        subMessage: 'Establishing connection to RAG service',
+      },
+      warming: {
+        message: 'Waking up the service...',
+        subMessage: 'This may take 10-30 seconds on first load',
+      },
+      ready: {
+        message: 'Almost ready...',
+        subMessage: 'Loading your documents',
+      },
+    }
+
+    const currentPhase = phaseConfig[loadingPhase]
+
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-background flex flex-col"
+      >
+        <div className="p-6">
+          <Button variant="outline" asChild>
+            <a href="#/" className="inline-flex items-center gap-2">
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+              Back to Generator
+            </a>
+          </Button>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md w-full px-6 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex justify-center mb-8"
+            >
+              <div className="relative w-16 h-16">
+                <motion.div
+                  className="absolute inset-0 rounded-full border-[3px] border-primary/20"
+                />
+                <motion.div
+                  className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent"
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              key={loadingPhase}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-2 mb-8"
+            >
+              <h2 className="text-xl font-semibold text-foreground">
+                {currentPhase.message}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {currentPhase.subMessage}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ delay: 0.3 }}
+              className="w-full bg-border rounded-full h-1.5 overflow-hidden"
+            >
+              <motion.div
+                className="h-full bg-primary rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${loadingProgress}%` }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              />
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
     )
   }
 
