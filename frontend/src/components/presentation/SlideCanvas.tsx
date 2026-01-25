@@ -93,7 +93,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
         <OnboardingFlow 
           steps={onboardingSteps} 
           activeStep={0}
-          completedSteps={documentCount > 0 ? [1] : []}
+          completedSteps={[]}
           className="text-left mb-6"
         />
 
