@@ -67,7 +67,7 @@ services:
     ports:
       - '8002:8002'
     env_file:
-      - path: .env
+      - path: ./rag_service/.env
         required: false
     volumes:
       - rag_storage:/app/rag_storage

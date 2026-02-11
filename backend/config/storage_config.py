@@ -2,7 +2,7 @@
 
 import os
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, cast
 
 from dotenv import load_dotenv
 
@@ -15,7 +15,9 @@ class StorageConfig:
 
     # Storage backend: "local" or "azure"
     backend: Literal["local", "azure"] = field(
-        default_factory=lambda: os.getenv("STORAGE_BACKEND", "local")
+        default_factory=lambda: cast(
+            Literal["local", "azure"], os.getenv("STORAGE_BACKEND", "local")
+        )
     )
 
     # Azure Storage Configuration

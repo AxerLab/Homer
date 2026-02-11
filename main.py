@@ -13,7 +13,6 @@ from backend.db import crud, models
 from backend.api import schemas
 from backend.db.session import get_db, engine
 from backend.core.generator.generator import (
-    generate_presentation,
     generate_presentation_with_rag,
 )
 from backend.core.iterator.iterator import regenerate_slide
@@ -34,7 +33,6 @@ from backend.core.rag.schemas import (
     RAGContextResponse,
     RAGDocumentCreate,
     RAGDocumentStatusResponse,
-    RAGDocumentResponse,
     RAGDocumentList,
     RAGDocumentDeleteResponse,
 )
