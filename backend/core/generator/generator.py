@@ -6,7 +6,7 @@ from ..rag.client import rag_client
 from pydantic_ai import ModelHTTPError
 from pydantic_ai.messages import ModelResponse, ToolCallPart, TextPart
 import json
-from typing import Any
+from typing import Any, Optional
 import toons  # type: ignore[import-untyped]
 
 
@@ -180,13 +180,19 @@ async def _generate_presentation_impl(
     return agent_slide_result.output
 
 async def generate_presentation_with_rag(
-    original_prompt: str, user_prompt: str, use_rag: bool = True
+    original_prompt: str,
+    user_prompt: str,
+    use_rag: bool = True,
+    doc_ids: Optional[list[str]] = None,
 ) -> SlidePresentation:
     rag_context = ""
 
-    if use_rag:
+    if use_rag or bool(doc_ids):
         try:
-            rag_context = await rag_client.get_context_for_topic(original_prompt)
+            rag_context = await rag_client.get_context_for_topic(
+                original_prompt,
+                doc_ids=doc_ids,
+            )
             if rag_context and rag_context.strip():
                 logger.info(f"RAG context retrieved: {len(rag_context)} chars")
         except Exception as e:

@@ -40,6 +40,10 @@ class RAGQueryRequest(BaseModel):
         default="hybrid", description="Query mode"
     )
     top_k: int = Field(default=10, ge=1, le=50, description="Number of results")
+    doc_ids: Optional[List[str]] = Field(
+        default=None,
+        description="Optional document IDs to scope retrieval",
+    )
 
 
 class RAGQueryResponse(BaseModel):
@@ -55,6 +59,10 @@ class RAGContextRequest(BaseModel):
 
     topic: str = Field(..., min_length=1, description="Presentation topic")
     mode: Literal["hybrid", "local", "global", "naive"] = Field(default="hybrid")
+    doc_ids: Optional[List[str]] = Field(
+        default=None,
+        description="Optional document IDs to scope retrieval",
+    )
 
 
 class RAGContextResponse(BaseModel):

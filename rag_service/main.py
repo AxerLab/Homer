@@ -1,5 +1,6 @@
 """RAG Microservice - FastAPI application for document ingestion and retrieval"""
 
+import asyncio
 import uuid
 import logging
 from pathlib import Path
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="RAG Service API",
     version="1.0.0",
-    description="Document ingestion and retrieval service using RAGAnything",
+    description="Document ingestion and retrieval service using hybrid BM25 + FastEmbed",
 )
 
 # Add CORS for backend communication
@@ -92,6 +93,21 @@ async def upload_document(
     )
 
     async def process_doc():
+        def stage_from_progress(progress: int) -> ProgressStage:
+            if progress < 10:
+                return ProgressStage.PENDING
+            if progress < 60:
+                return ProgressStage.PARSING
+            if progress < 90:
+                return ProgressStage.EMBEDDING
+            return ProgressStage.INDEXING
+
+        def on_progress(progress: int, message: str) -> None:
+            stage = stage_from_progress(progress)
+            asyncio.create_task(
+                sse_manager.send_progress(doc_id, progress, stage, message)
+            )
+
         try:
             await sse_manager.send_progress(
                 doc_id, 5, ProgressStage.PENDING, "Initializing RAG service"
@@ -101,9 +117,18 @@ async def upload_document(
             await sse_manager.send_progress(
                 doc_id, 10, ProgressStage.PARSING, "Starting document processing"
             )
-            await rag_service.process_document(
-                str(file_path), doc_id=doc_id, filename=file.filename
+            result = await rag_service.process_document(
+                str(file_path),
+                doc_id=doc_id,
+                filename=file.filename,
+                on_progress=on_progress,
             )
+
+            if not result.get("success"):
+                raise RuntimeError(
+                    result.get("error", "Document processing failed")
+                )
+
             await sse_manager.send_progress(
                 doc_id, 100, ProgressStage.COMPLETED, "Processing complete"
             )
@@ -125,11 +150,17 @@ async def query_rag(request: RAGQueryRequest):
     try:
         await rag_service.initialize()
         answer = await rag_service.query(
-            question=request.question, mode=request.mode, top_k=request.top_k
+            question=request.question,
+            mode=request.mode,
+            top_k=request.top_k,
+            doc_ids=request.doc_ids,
         )
         return RAGQueryResponse(
             answer=answer, question=request.question, mode=request.mode
         )
+    except TimeoutError as e:
+        logger.error(f"RAG query timed out: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"RAG query failed: {e}")
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
@@ -141,9 +172,14 @@ async def get_rag_context(request: RAGContextRequest):
     try:
         await rag_service.initialize()
         context = await rag_service.get_context_for_topic(
-            topic=request.topic, mode=request.mode
+            topic=request.topic,
+            mode=request.mode,
+            doc_ids=request.doc_ids,
         )
         return RAGContextResponse(context=context, topic=request.topic)
+    except TimeoutError as e:
+        logger.error(f"RAG context retrieval timed out: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"RAG context retrieval failed: {e}")
         raise HTTPException(
@@ -240,7 +276,7 @@ async def delete_document(doc_id: str):
     return RAGDocumentDeleteResponse(
         id=doc_id,
         deleted=deleted,
-        message="Document removed from library. Note: Content may remain in knowledge graph until server restart.",
+        message="Document removed from retrieval index.",
     )
 
 

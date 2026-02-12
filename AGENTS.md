@@ -36,7 +36,7 @@ ppt-ai/
 | Add slide layout | `backend/core/models/layouts/slide_layout.py` | Update SlideLayout enum + engines |
 | PPTX generation | `backend/core/engines/pptx/generator.py` | python-pptx, layout-specific |
 | LaTeX generation | `backend/core/engines/tex/generator.py` | Beamer template |
-| RAG document processing | `rag_service/core/service.py` | RAGAnything wrapper |
+| RAG document processing | `rag_service/core/service.py` | Hybrid BM25 + FastEmbed retriever |
 | Frontend components | `frontend/src/components/` | Feature folders |
 | API client | `frontend/src/services/api.ts` | presentationApi, ragApi |
 | Add PPTX theme | `backend/templates/` + `template_mapping.py` | .pptx templates |
@@ -52,7 +52,7 @@ ppt-ai/
 | `SlidePresentation` | Model | `backend/core/models/presentation/` | Root model, validates flow |
 | `Slide` | Model | `backend/core/models/slide/slide.py` | Individual slide + layout |
 | `SlideLayout` | Enum | `backend/core/models/layouts/` | 9 layout types |
-| `rag_service` | Singleton | `rag_service/core/service.py` | RAGAnything integration |
+| `rag_service` | Singleton | `rag_service/core/service.py` | Per-document hybrid retrieval service |
 | `generate_presentation_with_rag` | Function | `backend/core/generator/` | Main generation entry |
 | `structure_to_ppt` | Function | `backend/core/engines/pptx/` | JSON→PPTX |
 | `generate_tex_and_pdf` | Function | `backend/core/engines/tex/` | JSON→LaTeX→PDF |

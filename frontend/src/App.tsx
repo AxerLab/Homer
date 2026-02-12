@@ -45,11 +45,6 @@ function MainApp() {
     }
   }, [])
 
-  useEffect(() => {
-    loadPresentations()
-    fetchDocumentCount()
-  }, [fetchDocumentCount])
-
   // Keyboard shortcut: Cmd+B / Ctrl+B to toggle sidebar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -62,7 +57,7 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const loadPresentations = async () => {
+  const loadPresentations = useCallback(async () => {
     try {
       const presos = await presentationApi.getPresentations()
       setPresentations(presos)
@@ -78,15 +73,30 @@ function MainApp() {
     } catch (error) {
       console.error('Failed to load presentations:', error)
     }
-  }
+  }, [])
 
-  const handleGenerate = async (prompt: string, format: 'PPTX' | 'TeX', theme?: string, useRag: boolean = false) => {
-    console.log('Generating presentation:', { prompt, format, theme, useRag })
+  useEffect(() => {
+    loadPresentations()
+    fetchDocumentCount()
+  }, [fetchDocumentCount, loadPresentations])
+
+  const handleGenerate = async (
+    prompt: string,
+    format: 'PPTX' | 'TeX',
+    theme?: string,
+    selectedDocIds: string[] = [],
+  ) => {
+    console.log('Generating presentation:', { prompt, format, theme, selectedDocIds })
     setIsGenerating(true)
 
     const generatePromise = async () => {
       const fileType = format === 'TeX' ? 'pdf' : format.toLowerCase() as 'pptx' | 'pdf'
-      const presentation_id = await presentationApi.createPresentation(prompt, fileType, theme, useRag)
+      const presentation_id = await presentationApi.createPresentation(
+        prompt,
+        fileType,
+        theme,
+        selectedDocIds,
+      )
       const presentation = await presentationApi.getPresentation(presentation_id.id)
 
       setPresentations(prev => [{

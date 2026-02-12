@@ -78,10 +78,12 @@ async def create_presentation(
     presentation: schemas.PresentationCreate, db: Session = Depends(get_db)
 ):
     try:
+        should_use_rag = presentation.use_rag or bool(presentation.doc_ids)
         generated_presentation = await generate_presentation_with_rag(
             presentation.main_topic,
             presentation.main_topic,
-            use_rag=presentation.use_rag,
+            use_rag=should_use_rag,
+            doc_ids=presentation.doc_ids,
         )
 
         json_string = generated_presentation.model_dump_json()
@@ -552,7 +554,10 @@ async def query_rag(request: RAGQueryRequest):
     """Query the RAG knowledge base"""
     try:
         result = await rag_client.query(
-            question=request.question, mode=request.mode, top_k=request.top_k
+            question=request.question,
+            mode=request.mode,
+            top_k=request.top_k,
+            doc_ids=request.doc_ids,
         )
         return RAGQueryResponse(**result)
     except httpx.HTTPStatusError as e:
@@ -567,7 +572,11 @@ async def query_rag(request: RAGQueryRequest):
 async def get_rag_context(request: RAGContextRequest):
     """Get context for a topic from the RAG knowledge base"""
     try:
-        result = await rag_client.get_context(topic=request.topic, mode=request.mode)
+        result = await rag_client.get_context(
+            topic=request.topic,
+            mode=request.mode,
+            doc_ids=request.doc_ids,
+        )
         return RAGContextResponse(**result)
     except httpx.HTTPStatusError as e:
         logger.error(f"RAG context retrieval failed: {e}")
