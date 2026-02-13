@@ -1,20 +1,20 @@
 # RAG SERVICE
 
-Standalone FastAPI microservice for document ingestion and retrieval using hybrid sparse + dense search.
+Standalone FastAPI microservice for document ingestion and retrieval using hybrid sparse + dense search. Major rewrite in 3b8e5f8e — removed `llm_adapter.py`, moved LLM calls to direct Groq HTTP.
 
 ## STRUCTURE
 
 ```
 rag_service/
-├── main.py         # FastAPI app and endpoints
+├── main.py         # FastAPI app and endpoints (287 lines)
 ├── core/
-│   ├── service.py  # RAGService: extraction, chunking, indexing, retrieval
-│   ├── config.py   # RAGConfig (chunking, retrieval, Groq synthesis)
-│   ├── schemas.py  # Pydantic request/response models
-│   └── sse.py      # Server-sent events for upload/index progress
+│   ├── service.py  # RAGService: extraction, chunking, indexing, retrieval (661 lines)
+│   ├── config.py   # RAGConfig dataclass — all settings via env vars (111 lines)
+│   ├── schemas.py  # Pydantic request/response models (112 lines)
+│   └── sse.py      # Server-sent events + ProgressStage enum
 ├── .env.example    # Service environment variables
-├── pyproject.toml  # Lightweight dependencies
-└── Dockerfile
+├── pyproject.toml  # Lightweight deps (FastEmbed, rank-bm25, PyMuPDF, python-docx)
+└── Dockerfile      # Multi-stage uv build, Python 3.12
 ```
 
 ## DATA FLOW
@@ -28,15 +28,15 @@ BackgroundTask: process_document()
     ↓
 Text Extraction (PDF, DOCX, PPTX, XLSX, TXT/MD, images metadata)
     ↓
-Chunking
+Chunking (configurable size/overlap/min via env)
     ↓
 Per-document indexing:
   - BM25 index (sparse retrieval)
-  - FastEmbed vectors (dense retrieval)
+  - FastEmbed vectors (dense retrieval, BAAI/bge-small-en-v1.5 default)
     ↓
 RRF fusion at query-time
     ↓
-Optional Groq synthesis
+Optional Groq synthesis (direct HTTP, no llm_adapter)
     ↓
 SSE progress updates → Frontend
 ```
@@ -67,22 +67,23 @@ rag_service.query()                  # Hybrid retrieval + optional synthesis
 rag_service.get_context_for_topic()  # Topic-focused retrieval for backend
 ```
 
-### Retrieval Strategy
+### RAGConfig (`core/config.py`)
+Dataclass with `__post_init__` creating storage dirs. ALL settings via env vars:
+- Parser: `RAG_PARSER` (default: `hybrid_fast`)
+- Embedding: `RAG_FASTEMBED_MODEL`, `RAG_EMBEDDING_DIM`, `RAG_EMBEDDING_MODEL`
+- Chunking: `RAG_CHUNK_SIZE_CHARS` (1200), `RAG_CHUNK_OVERLAP_CHARS` (200), `RAG_MIN_CHUNK_CHARS` (120)
+- Retrieval: `RAG_PER_RETRIEVER_K` (15), `RAG_FINAL_CONTEXT_K` (5), `RAG_RRF_K` (60)
+- LLM: `RAG_GROQ_API_KEY`, `RAG_GROQ_MODEL`, `RAG_GROQ_MAX_TOKENS`, `RAG_GROQ_CHAT_COMPLETIONS_URL`
+- Timeouts: `RAG_QUERY_TIMEOUT_SECONDS` (45), `RAG_LLM_TIMEOUT_SECONDS` (45)
+- Files: Max 50MB, allowed: .pdf, .docx, .pptx, .xlsx, .txt, .md, .png, .jpg
 
-- BM25 ranking and FastEmbed cosine ranking run in parallel per document
-- Reciprocal Rank Fusion merges both rankings
-- Top chunks are returned directly or summarized with Groq
-
-## CONFIG HIGHLIGHTS
-
-- `RAG_FASTEMBED_MODEL`
-- `RAG_CHUNK_SIZE_CHARS`, `RAG_CHUNK_OVERLAP_CHARS`, `RAG_MIN_CHUNK_CHARS`
-- `RAG_PER_RETRIEVER_K`, `RAG_FINAL_CONTEXT_K`, `RAG_RRF_K`
-- `RAG_GROQ_API_KEY`, `RAG_GROQ_MODEL`, `RAG_GROQ_MAX_TOKENS`
-- `RAG_QUERY_TIMEOUT_SECONDS`, `RAG_LLM_TIMEOUT_SECONDS`, `RAG_SYNTHESIS_MAX_CHARS`
+### Progress Tracking (`core/sse.py`)
+`ProgressStage` enum: PENDING → PARSING → EMBEDDING → INDEXING → COMPLETED/FAILED
 
 ## NOTES
 
 - Port `8002`; called by backend via `backend/core/rag/client.py`
+- Removed `llm_adapter.py` — LLM synthesis now via direct Groq HTTP calls in service.py
+- Separate `pyproject.toml` — NOT shared with main backend
+- Storage dirs auto-created: `rag_uploads/`, `rag_parsed/`, `rag_storage/`
 - Designed for fast ingestion and low-latency retrieval without GraphRAG
-- Supports PDF-first retrieval quality with additional file-format support
