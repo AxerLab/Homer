@@ -1,24 +1,26 @@
-"""RAG Configuration with HuggingFace embeddings"""
-
 import os
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Tuple, Literal
+from pathlib import Path
+from typing import Tuple
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-# Embedding provider types
-EmbeddingProvider = Literal["huggingface", "fastembed"]
+def _env_int(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return int(value.strip())
+    except ValueError:
+        return default
 
 
 @dataclass
 class RAGConfig:
-    """Configuration for RAG service using free HuggingFace embeddings"""
 
-    # Directory Configuration
     working_dir: Path = field(
         default_factory=lambda: Path(os.getenv("RAG_WORKING_DIR", "./rag_storage"))
     )
@@ -29,49 +31,55 @@ class RAGConfig:
         default_factory=lambda: Path(os.getenv("RAG_UPLOAD_DIR", "./rag_uploads"))
     )
 
-    # Embedding Provider Toggle
-    # Options: "huggingface" (remote API, sequential) or "fastembed" (local, batched, faster)
-    # Set RAG_EMBEDDING_PROVIDER=fastembed for significantly faster processing
-    embedding_provider: EmbeddingProvider = field(
-        default_factory=lambda: os.getenv("RAG_EMBEDDING_PROVIDER", "huggingface")  # type: ignore[return-value]
-    )
-
-    # HuggingFace Inference API (FREE tier, remote - no local model needed)
-    hf_api_token: str = field(default_factory=lambda: os.getenv("HF_API_TOKEN", ""))
-    embedding_model: str = field(
-        default_factory=lambda: os.getenv(
-            "RAG_EMBEDDING_MODEL",
-            "sentence-transformers/all-MiniLM-L6-v2",
-        )
-    )
-    embedding_dim: int = field(
-        default_factory=lambda: int(os.getenv("RAG_EMBEDDING_DIM", "384"))
-    )
-
-    # FastEmbed Configuration (local ONNX-based, batched processing)
-    # Model options: "BAAI/bge-small-en-v1.5" (384d), "BAAI/bge-base-en-v1.5" (768d)
     fastembed_model: str = field(
+        default_factory=lambda: os.getenv("RAG_FASTEMBED_MODEL", "BAAI/bge-small-en-v1.5")
+    )
+    embedding_dim: int = field(default_factory=lambda: _env_int("RAG_EMBEDDING_DIM", 384))
+    chunk_size_chars: int = field(
+        default_factory=lambda: _env_int("RAG_CHUNK_SIZE_CHARS", 1200)
+    )
+    chunk_overlap_chars: int = field(
+        default_factory=lambda: _env_int("RAG_CHUNK_OVERLAP_CHARS", 200)
+    )
+    min_chunk_chars: int = field(
+        default_factory=lambda: _env_int("RAG_MIN_CHUNK_CHARS", 120)
+    )
+    per_retriever_k: int = field(
+        default_factory=lambda: _env_int("RAG_PER_RETRIEVER_K", 15)
+    )
+    final_context_k: int = field(
+        default_factory=lambda: _env_int("RAG_FINAL_CONTEXT_K", 5)
+    )
+    rrf_k: int = field(default_factory=lambda: _env_int("RAG_RRF_K", 60))
+
+    groq_api_key: str = field(
+        default_factory=lambda: os.getenv("RAG_GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+    )
+    groq_model: str = field(
+        default_factory=lambda: os.getenv("RAG_GROQ_MODEL", "llama-3.3-70b-versatile")
+    )
+    groq_chat_completions_url: str = field(
         default_factory=lambda: os.getenv(
-            "RAG_FASTEMBED_MODEL",
-            "BAAI/bge-small-en-v1.5",
+            "RAG_GROQ_CHAT_COMPLETIONS_URL",
+            "https://api.groq.com/openai/v1/chat/completions",
         )
     )
-    fastembed_max_length: int = field(
-        default_factory=lambda: int(os.getenv("RAG_FASTEMBED_MAX_LENGTH", "512"))
+    llm_timeout_seconds: int = field(
+        default_factory=lambda: _env_int("RAG_LLM_TIMEOUT_SECONDS", 45)
+    )
+    query_timeout_seconds: int = field(
+        default_factory=lambda: _env_int("RAG_QUERY_TIMEOUT_SECONDS", 45)
+    )
+    synthesis_max_chars: int = field(
+        default_factory=lambda: _env_int("RAG_SYNTHESIS_MAX_CHARS", 6000)
+    )
+    groq_max_tokens: int = field(
+        default_factory=lambda: _env_int("RAG_GROQ_MAX_TOKENS", 1024)
     )
 
-    # Parser Configuration (switch via RAG_PARSER env var)
-    parser: str = field(default_factory=lambda: os.getenv("RAG_PARSER", "docling"))
-    parse_method: str = field(
-        default_factory=lambda: os.getenv("RAG_PARSE_METHOD", "auto")
-    )
+    parser: str = field(default_factory=lambda: os.getenv("RAG_PARSER", "hybrid_fast"))
+    embedding_model: str = field(default_factory=lambda: os.getenv("RAG_EMBEDDING_MODEL", "fastembed"))
 
-    # Processing options
-    enable_image_processing: bool = True
-    enable_table_processing: bool = True
-    enable_equation_processing: bool = True
-
-    # Allowed file extensions
     allowed_extensions: Tuple[str, ...] = (
         ".pdf",
         ".docx",
@@ -86,10 +94,9 @@ class RAGConfig:
         ".txt",
         ".md",
     )
-    max_file_size: int = 50 * 1024 * 1024  # 50MB
+    max_file_size: int = 50 * 1024 * 1024
 
     def __post_init__(self) -> None:
-        """Ensure directories exist"""
         self.working_dir = Path(self.working_dir)
         self.parser_output_dir = Path(self.parser_output_dir)
         self.upload_dir = Path(self.upload_dir)

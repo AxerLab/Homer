@@ -29,7 +29,7 @@ export type CreatePresentationRequest = {
   main_topic: string;
   file_type: 'pptx' | 'pdf';
   theme?: string;  // Optional theme selection
-  use_rag?: boolean;  // Whether to use RAG context from uploaded documents
+  doc_ids?: string[];
 }
 
 export type CreatePresentationResponse = {
@@ -68,6 +68,7 @@ export type RAGQueryRequest = {
   question: string;
   mode?: 'hybrid' | 'local' | 'global' | 'naive';
   top_k?: number;
+  doc_ids?: string[];
 }
 
 export type RAGQueryResponse = {
@@ -79,6 +80,7 @@ export type RAGQueryResponse = {
 export type RAGContextRequest = {
   topic: string;
   mode?: 'hybrid' | 'local' | 'global' | 'naive';
+  doc_ids?: string[];
 }
 
 export type RAGContextResponse = {

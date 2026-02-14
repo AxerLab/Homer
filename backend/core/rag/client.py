@@ -46,12 +46,20 @@ class RAGServiceClient:
         question: str,
         mode: str = "hybrid",
         top_k: int = 10,
+        doc_ids: Optional[list[str]] = None,
     ) -> Dict[str, Any]:
         """Query the RAG knowledge base"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
+            payload: Dict[str, Any] = {
+                "question": question,
+                "mode": mode,
+                "top_k": top_k,
+            }
+            if doc_ids:
+                payload["doc_ids"] = doc_ids
             response = await client.post(
                 f"{self.base_url}/query",
-                json={"question": question, "mode": mode, "top_k": top_k},
+                json=payload,
             )
             response.raise_for_status()
             return response.json()
@@ -60,12 +68,16 @@ class RAGServiceClient:
         self,
         topic: str,
         mode: str = "hybrid",
+        doc_ids: Optional[list[str]] = None,
     ) -> Dict[str, Any]:
         """Get context for a topic from the RAG knowledge base"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
+            payload: Dict[str, Any] = {"topic": topic, "mode": mode}
+            if doc_ids:
+                payload["doc_ids"] = doc_ids
             response = await client.post(
                 f"{self.base_url}/context",
-                json={"topic": topic, "mode": mode},
+                json=payload,
             )
             response.raise_for_status()
             return response.json()
@@ -74,10 +86,11 @@ class RAGServiceClient:
         self,
         topic: str,
         mode: str = "hybrid",
+        doc_ids: Optional[list[str]] = None,
     ) -> str:
         """Get context string for a topic (convenience method for generator)"""
         try:
-            result = await self.get_context(topic, mode)
+            result = await self.get_context(topic, mode, doc_ids)
             return result.get("context", "")
         except Exception as e:
             logger.warning(f"Failed to get RAG context: {e}")
@@ -106,9 +119,9 @@ class RAGServiceClient:
                 headers={"Accept": "text/event-stream"},
             ) as response:
                 response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if line:
-                        yield line + "\n"
+                async for chunk in response.aiter_text():
+                    if chunk:
+                        yield chunk
 
     async def list_documents(self) -> Dict[str, Any]:
         """List all documents in the RAG service"""

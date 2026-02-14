@@ -21,14 +21,10 @@ COPY --from=builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy application code
-COPY main.py ./
-COPY core/ ./core/
-
-# Create storage directories
-RUN mkdir -p /app/rag_storage /app/rag_parsed /app/rag_uploads
+COPY server.py ./
 
 # Expose port
-EXPOSE 8002
+EXPOSE 8003
 
 # Run the service
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["python", "server.py"]

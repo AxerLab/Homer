@@ -1,8 +1,11 @@
 from pydantic_ai.models import Model
-from .groq import model as groq_model, correction_model as groq_correction_model
-from .portkey import portkey_complete, portkey_vision_complete
+from .ollama import research_model as ollama_research_model, slide_model as ollama_slide_model
+from .groq import research_model as groq_research_model, slide_model as groq_slide_model
 
-model: Model = groq_model
-correction_model: Model = groq_correction_model
+local_research_model: Model = ollama_research_model
+local_slide_model: Model = ollama_slide_model
 
-__all__ = ["model", "correction_model", "portkey_complete", "portkey_vision_complete"]
+cloud_research_model: Model = groq_research_model
+cloud_slide_model: Model = groq_slide_model
+
+__all__ = ["local_research_model", "local_slide_model", "cloud_research_model", "cloud_slide_model"]

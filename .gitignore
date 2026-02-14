@@ -224,6 +224,9 @@ CLAUDE.md
 generated_files/
 docs/
 !backend/templates/*.pptx
+opencode.json
+DEPLOYMENT.md
+deploy-*.yml
 
 # RAG storage directories
 rag_storage/

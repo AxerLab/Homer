@@ -66,8 +66,13 @@ export const presentationApi = {
   },
 
   // Create a new presentation
-  async createPresentation(topic: string, fileType: 'pptx' | 'pdf' = 'pptx', theme?: string, useRag: boolean = false): Promise<{ id: string }> {
-    console.log('Creating presentation:', { topic, fileType, theme, useRag });
+  async createPresentation(
+    topic: string,
+    fileType: 'pptx' | 'pdf' = 'pptx',
+    theme?: string,
+    docIds: string[] = [],
+  ): Promise<{ id: string }> {
+    console.log('Creating presentation:', { topic, fileType, theme, docIds });
 
     const response = await fetch(`${API_BASE_URL}/api/v1/presentations/`, {
       method: 'POST',
@@ -78,7 +83,7 @@ export const presentationApi = {
       body: JSON.stringify({
         main_topic: topic,
         file_type: fileType,
-        use_rag: useRag,
+        ...(docIds.length > 0 && { doc_ids: docIds }),
         ...(theme && { theme })
       } as CreatePresentationRequest),
     });

@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { SentIcon, BookOpen01Icon, Folder01Icon } from '@hugeicons/core-free-icons'
+import { SentIcon, BookOpen01Icon } from '@hugeicons/core-free-icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -13,10 +12,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DocumentUploadInline } from '@/components/rag/DocumentUploadInline'
+import { DocumentAttachSelector } from '@/components/rag/DocumentAttachSelector'
 import { ragApi } from '@/services/api'
 
 interface GenerateButtonProps {
-  onGenerate: (prompt: string, format: 'PPTX' | 'TeX', theme?: string, useRag?: boolean) => void
+  onGenerate: (prompt: string, format: 'PPTX' | 'TeX', theme?: string, selectedDocIds?: string[]) => void
   isGenerating?: boolean
   documentCount?: number
   onDocumentCountChange?: () => void
@@ -32,7 +32,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState<'PPTX' | 'TeX'>('PPTX')
   const [selectedTheme, setSelectedTheme] = useState<string>('light')
-  const [useRag, setUseRag] = useState(false)
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
   const [localDocCount, setLocalDocCount] = useState(0)
   const dialogRef = useRef<HTMLDivElement>(null)
 
@@ -73,7 +73,12 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
 
   const handleGenerate = () => {
     if (prompt.trim()) {
-      onGenerate(prompt, selectedFormat, selectedFormat === 'PPTX' ? selectedTheme : undefined, useRag)
+      onGenerate(
+        prompt,
+        selectedFormat,
+        selectedFormat === 'PPTX' ? selectedTheme : undefined,
+        selectedDocIds,
+      )
       setPrompt('')
       setIsExpanded(false)
     }
@@ -87,8 +92,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
   const handleUploadComplete = () => {
     fetchDocumentCount()
     onDocumentCountChange?.()
-    // Don't auto-enable RAG - document is still processing at this point
-    // User can manually enable once document status is 'completed'
   }
 
   return (
@@ -125,7 +128,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
               <div className="before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-gradient-to-r before:from-primary/20 before:to-primary/10 before:blur-xl" />
 
               <textarea
-                autoFocus
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe your presentation..."
@@ -133,7 +135,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
               />
 
               <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
                     <HugeiconsIcon icon={BookOpen01Icon} size={18} className="text-primary" />
                     <span className="font-medium text-sm text-foreground">Knowledge Base</span>
@@ -143,12 +145,6 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                       </Badge>
                     )}
                   </div>
-                  <Switch
-                    checked={useRag}
-                    onCheckedChange={setUseRag}
-                    disabled={documentCount === 0}
-                    className="data-[state=checked]:bg-primary"
-                  />
                 </div>
 
                 {documentCount === 0 ? (
@@ -159,19 +155,20 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                     <DocumentUploadInline onUploadComplete={handleUploadComplete} />
                   </div>
                 ) : (
-                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      {useRag 
-                        ? 'AI will use your documents as reference' 
-                        : 'Toggle on to use your documents'}
-                    </span>
-                    <a 
-                      href="#/documents" 
-                      className="flex items-center gap-1 hover:text-primary transition-colors"
-                    >
-                      <HugeiconsIcon icon={Folder01Icon} size={12} />
-                      Manage
-                    </a>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Select 0, 1, or multiple documents for generation context
+                    </p>
+                    <DocumentAttachSelector
+                      selectedDocIds={selectedDocIds}
+                      onSelectionChange={setSelectedDocIds}
+                      dropdownPlacement="top"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {selectedDocIds.length > 0
+                        ? `${selectedDocIds.length} document${selectedDocIds.length > 1 ? 's' : ''} selected`
+                        : 'No documents selected (generation will run without document context)'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -181,6 +178,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                   {(['PPTX', 'TeX'] as const).map(format => (
                     <button
                       key={format}
+                      type="button"
                       onClick={() => setSelectedFormat(format)}
                       className={cn(
                         'px-4 py-1.5 rounded-sm text-sm font-medium transition-all duration-200',
@@ -209,6 +207,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
 
                 {prompt.trim() ? (
                   <button
+                    type="button"
                     onClick={handleGenerate}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                   >
@@ -217,6 +216,7 @@ export const GenerateButton: React.FC<GenerateButtonProps> = ({
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={handleClose}
                     className="text-muted-foreground hover:text-foreground transition-colors"
                   >

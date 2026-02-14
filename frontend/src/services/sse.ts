@@ -14,6 +14,7 @@ export function subscribeToDocumentProgress(
 ): () => void {
   const url = `${API_BASE_URL}/api/v1/rag/document/${docId}/progress`;
   const eventSource = new EventSource(url);
+  let isTerminal = false;
 
   eventSource.onmessage = (event) => {
     try {
@@ -21,9 +22,11 @@ export function subscribeToDocumentProgress(
       callbacks.onProgress(data);
 
       if (data.stage === 'completed') {
+        isTerminal = true;
         callbacks.onComplete(data);
         eventSource.close();
       } else if (data.stage === 'failed') {
+        isTerminal = true;
         callbacks.onError(data.error || 'Processing failed');
         eventSource.close();
       }
@@ -33,8 +36,13 @@ export function subscribeToDocumentProgress(
   };
 
   eventSource.onerror = () => {
-    callbacks.onError('Connection lost');
-    eventSource.close();
+    if (isTerminal) {
+      return;
+    }
+    if (eventSource.readyState === EventSource.CLOSED) {
+      callbacks.onError('Connection lost');
+      eventSource.close();
+    }
   };
 
   return () => {

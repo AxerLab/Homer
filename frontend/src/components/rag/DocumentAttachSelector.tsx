@@ -15,12 +15,14 @@ interface DocumentAttachSelectorProps {
   selectedDocIds: string[]
   onSelectionChange: (docIds: string[]) => void
   className?: string
+  dropdownPlacement?: 'top' | 'bottom'
 }
 
 export const DocumentAttachSelector: React.FC<DocumentAttachSelectorProps> = ({
   selectedDocIds,
   onSelectionChange,
-  className = ''
+  className = '',
+  dropdownPlacement = 'bottom'
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [documents, setDocuments] = useState<RAGDocumentStatus[]>([])
@@ -76,7 +78,7 @@ export const DocumentAttachSelector: React.FC<DocumentAttachSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <Card className="absolute top-full left-0 mt-2 w-72 shadow-xl z-50">
+        <Card className={`absolute left-0 w-72 shadow-xl z-50 ${dropdownPlacement === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'}`}>
           <div className="p-3 border-b border-border">
             <h4 className="text-sm font-medium text-foreground">Select Documents</h4>
             <p className="text-xs text-muted-foreground mt-0.5">Choose context for generation</p>

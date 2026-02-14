@@ -2,7 +2,6 @@ from pptx import Presentation
 from pptx.shapes.base import BaseShape
 from pptx.text.text import TextFrame
 from pptx.shapes.placeholder import PicturePlaceholder
-from pptx.util import Inches, Pt
 from pptx.enum.text import MSO_AUTO_SIZE
 from ...models.content.textcontent.textcontent import TextContent
 from ...models.content.textcontent.comparison import Comparison, BulletList
@@ -73,7 +72,6 @@ class PPTXGenerator:
 
     def _apply_text_fit(self, text_frame: TextFrame, layout_name: str) -> None:
         """Apply auto-fit to prevent text overflow."""
-        config = TextFitConfig.get_config(layout_name)
         try:
             text_frame.word_wrap = True
             text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE

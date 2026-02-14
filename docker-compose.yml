@@ -67,12 +67,25 @@ services:
     ports:
       - '8002:8002'
     env_file:
-      - path: .env
+      - path: ./rag_service/.env
         required: false
     volumes:
       - rag_storage:/app/rag_storage
       - rag_parsed:/app/rag_parsed
       - rag_uploads:/app/rag_uploads
+    restart: unless-stopped
+
+  mcp-server:
+    image: pptai-mcp-server:latest
+    build:
+      context: ./mcp_server
+      dockerfile: Dockerfile
+    ports:
+      - '8003:8003'
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:

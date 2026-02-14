@@ -1,8 +1,8 @@
-"""Azure Blob Storage Configuration"""
+"""Storage Configuration (Local, Azure Blob, or Supabase Storage)"""
 
 import os
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, cast
 
 from dotenv import load_dotenv
 
@@ -11,11 +11,14 @@ load_dotenv()
 
 @dataclass
 class StorageConfig:
-    """Configuration for file storage (local or Azure Blob)"""
+    """Configuration for file storage (local, Azure Blob, or Supabase Storage)"""
 
-    # Storage backend: "local" or "azure"
-    backend: Literal["local", "azure"] = field(
-        default_factory=lambda: os.getenv("STORAGE_BACKEND", "local")
+    # Storage backend: "local", "azure", or "supabase"
+    backend: Literal["local", "azure", "supabase"] = field(
+        default_factory=lambda: cast(
+            Literal["local", "azure", "supabase"],
+            os.getenv("STORAGE_BACKEND", "local"),
+        )
     )
 
     # Azure Storage Configuration
@@ -39,6 +42,17 @@ class StorageConfig:
         default_factory=lambda: int(os.getenv("AZURE_STORAGE_SAS_EXPIRY_MINUTES", "60"))
     )
 
+    # Supabase Storage Configuration
+    supabase_url: str = field(
+        default_factory=lambda: os.getenv("SUPABASE_URL", "")
+    )
+    supabase_service_key: str = field(
+        default_factory=lambda: os.getenv("SUPABASE_SERVICE_KEY", "")
+    )
+    supabase_bucket: str = field(
+        default_factory=lambda: os.getenv("SUPABASE_STORAGE_BUCKET", "presentations")
+    )
+
     # Local storage paths (fallback)
     local_output_dir: str = field(
         default_factory=lambda: os.getenv("LOCAL_OUTPUT_DIR", "generated_files")
@@ -49,6 +63,13 @@ class StorageConfig:
         """Check if Azure storage is configured and enabled"""
         return self.backend == "azure" and bool(
             self.azure_connection_string or self.azure_account_name
+        )
+
+    @property
+    def is_supabase(self) -> bool:
+        """Check if Supabase storage is configured and enabled"""
+        return self.backend == "supabase" and bool(
+            self.supabase_url and self.supabase_service_key
         )
 
     @property
