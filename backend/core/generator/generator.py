@@ -3,6 +3,7 @@ from ...config.logs import logger
 from ..memory.global_memory import global_memory
 from ..models.presentation.presentation import SlidePresentation
 from ..rag.client import rag_client
+from .auto_fix import fix_presentation_dict
 from pydantic_ai import ModelHTTPError
 from pydantic_ai.messages import ModelResponse, ToolCallPart, TextPart
 import json
@@ -145,12 +146,19 @@ async def _generate_presentation_impl(
             logger.error(f"Error during slide_agent attempt {attempt + 1}: {e}")
             error_msg = str(e)
 
-            # Try to extract the failed output from the exception's messages
             exc: Any = e
             if hasattr(exc, "_messages"):
                 raw = extract_unvalidated_output(exc._messages)
                 if raw["final_result_args"]:
                     failed_attempt_json = json.dumps(raw["final_result_args"], default=str)
+
+                    try:
+                        fixed = fix_presentation_dict(raw["final_result_args"])
+                        agent_slide_result_data = SlidePresentation(**fixed)
+                        logger.info(f"Auto-fix recovered presentation on attempt {attempt + 1}")
+                        return agent_slide_result_data
+                    except Exception as fix_err:
+                        logger.debug(f"Auto-fix failed, continuing retry loop: {fix_err}")
 
             if _is_token_limit_error(e):
                 logger.warning(

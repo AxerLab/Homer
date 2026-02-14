@@ -1,0 +1,19 @@
+[project]
+name = "pptai-mcp-server"
+version = "1.0.0"
+description = "MCP server for AI-powered presentation generation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=1.9.0",
+    "httpx>=0.28.1",
+    "uvicorn>=0.35.0",
+    "pydantic>=2.11.7",
+    "python-dotenv>=1.1.1",
+    "colorlog>=6.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

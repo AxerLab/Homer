@@ -222,6 +222,10 @@ class Slide(BaseModel):
                     f"Slides with layout '{self.layout}' must have 'text' content "
                     "as caption and not bullet points"
                 )
+            if not self.title:
+                raise ValueError(
+                    f"Slides with layout '{self.layout}' should have a title for better context"
+                )
 
         self._validate_layout_content_limits()
 

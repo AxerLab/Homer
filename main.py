@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.orm import Session
 import json
+import os
 import uuid
 import tempfile
 from pathlib import Path
@@ -24,7 +25,7 @@ from backend.core.engines.tex.generator import generate_tex_and_pdf
 from backend.core.engines.converter.pptx_to_pdf import convert_pptx_to_pdf
 from backend.config.logs import logger
 from backend.config.storage_config import storage_config
-from backend.core.storage import AzureBlobService
+from backend.core.storage import AzureBlobService, SupabaseStorageService
 from backend.core.rag.client import rag_client
 from backend.core.rag.schemas import (
     RAGQueryRequest,
@@ -51,14 +52,28 @@ PDF_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="AI Slides API", version="1.0.0")
 
+
+@app.on_event("startup")
+async def startup_event():
+    if storage_config.is_supabase:
+        await SupabaseStorageService.get_instance()
+
+
+async def _get_cloud_storage_service():
+    if storage_config.is_supabase:
+        return await SupabaseStorageService.get_instance()
+    elif storage_config.is_azure:
+        return await AzureBlobService.get_instance()
+    return None
+
 # Add CORS for frontend development
+_default_origins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+_cors_env = os.getenv("CORS_ORIGINS", "")
+_cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else _default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:3000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,12 +106,13 @@ async def create_presentation(
 
         pptx_blob_path = None
         pdf_blob_path = None
-        use_azure = storage_config.is_azure
+        use_cloud = storage_config.is_azure or storage_config.is_supabase
         db_presentation = None
 
         if presentation.file_type == "pptx":
-            if use_azure:
-                storage_service = await AzureBlobService.get_instance()
+            if use_cloud:
+                storage_service = await _get_cloud_storage_service()
+                assert storage_service is not None
                 presentation_id = str(uuid.uuid4())
 
                 pptx_bytes = await structure_to_ppt(
@@ -145,7 +161,7 @@ async def create_presentation(
                         json_object=json_string,
                         file_type=presentation.file_type,
                         theme=presentation.theme,
-                        storage_backend="azure",
+                        storage_backend=storage_config.backend,
                         pptx_blob_path=pptx_blob_path,
                         pdf_blob_path=pdf_blob_path,
                     )
@@ -171,8 +187,9 @@ async def create_presentation(
                 convert_pptx_to_pdf(str(file_path), str(pdf_path))
 
         elif presentation.file_type == "pdf":
-            if use_azure:
-                storage_service = await AzureBlobService.get_instance()
+            if use_cloud:
+                storage_service = await _get_cloud_storage_service()
+                assert storage_service is not None
                 presentation_id = str(uuid.uuid4())
 
                 result = await generate_tex_and_pdf(
@@ -201,7 +218,7 @@ async def create_presentation(
                     json_object=json_string,
                     file_type=presentation.file_type,
                     theme=presentation.theme,
-                    storage_backend="azure",
+                    storage_backend=storage_config.backend,
                     pptx_blob_path=tex_blob_path,
                     pdf_blob_path=pdf_blob_path,
                 )
@@ -334,9 +351,12 @@ async def delete_presentation(presentation_id: str, db: Session = Depends(get_db
 
     storage_backend = getattr(db_presentation, "storage_backend", "local")
 
-    if storage_backend == "azure":
+    if storage_backend in ("azure", "supabase"):
         try:
-            storage_service = await AzureBlobService.get_instance()
+            if storage_backend == "supabase":
+                storage_service = await SupabaseStorageService.get_instance()
+            else:
+                storage_service = await AzureBlobService.get_instance()
             pptx_blob = getattr(db_presentation, "pptx_blob_path", None)
             pdf_blob = getattr(db_presentation, "pdf_blob_path", None)
             if pptx_blob:
@@ -344,7 +364,7 @@ async def delete_presentation(presentation_id: str, db: Session = Depends(get_db
             if pdf_blob:
                 await storage_service.delete_presentation(pdf_blob)
         except Exception as e:
-            logger.error(f"Failed to delete Azure blobs: {e}")
+            logger.error(f"Failed to delete cloud storage blobs: {e}")
     else:
         pptx_file = PPTX_DIR / f"{presentation_id}.pptx"
         pdf_file = PDF_DIR / f"{presentation_id}.pdf"
@@ -450,38 +470,67 @@ async def download_presentation(
 
     storage_backend = getattr(db_presentation, "storage_backend", "local")
 
-    if storage_backend == "azure":
+    if storage_backend in ("azure", "supabase"):
         try:
-            storage_service = await AzureBlobService.get_instance()
-            if format == "pptx":
-                blob_path = getattr(db_presentation, "pptx_blob_path", None)
-                media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            else:
-                blob_path = getattr(db_presentation, "pdf_blob_path", None)
-                media_type = "application/pdf"
+            if storage_backend == "supabase":
+                storage_service_sb = await SupabaseStorageService.get_instance()
+                if format == "pptx":
+                    blob_path = getattr(db_presentation, "pptx_blob_path", None)
+                    media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                else:
+                    blob_path = getattr(db_presentation, "pdf_blob_path", None)
+                    media_type = "application/pdf"
 
-            if not blob_path:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"{format.upper()} file not available for this presentation",
-                )
+                if not blob_path:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"{format.upper()} file not available for this presentation",
+                    )
 
-            if redirect:
-                download_url = storage_service.generate_download_url(blob_path)
-                return RedirectResponse(url=download_url, status_code=302)
+                if redirect:
+                    download_url = await storage_service_sb.generate_download_url(blob_path)
+                    return RedirectResponse(url=download_url, status_code=302)
+                else:
+                    content = await storage_service_sb.download_presentation(blob_path)
+                    return StreamingResponse(
+                        iter([content]),
+                        media_type=media_type,
+                        headers={
+                            "Content-Disposition": f"inline; filename={presentation_id}.{format}",
+                            "Access-Control-Allow-Origin": "*",
+                        },
+                    )
             else:
-                content = await storage_service.download_presentation(blob_path)
-                return StreamingResponse(
-                    iter([content]),
-                    media_type=media_type,
-                    headers={
-                        "Content-Disposition": f"inline; filename={presentation_id}.{format}",
-                        "Access-Control-Allow-Origin": "*",
-                    },
-                )
+                storage_service_az = await AzureBlobService.get_instance()
+                if format == "pptx":
+                    blob_path = getattr(db_presentation, "pptx_blob_path", None)
+                    media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                else:
+                    blob_path = getattr(db_presentation, "pdf_blob_path", None)
+                    media_type = "application/pdf"
+
+                if not blob_path:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"{format.upper()} file not available for this presentation",
+                    )
+
+                if redirect:
+                    download_url = storage_service_az.generate_download_url(blob_path)
+                    return RedirectResponse(url=download_url, status_code=302)
+                else:
+                    content = await storage_service_az.download_presentation(blob_path)
+                    return StreamingResponse(
+                        iter([content]),
+                        media_type=media_type,
+                        headers={
+                            "Content-Disposition": f"inline; filename={presentation_id}.{format}",
+                            "Access-Control-Allow-Origin": "*",
+                        },
+                    )
 
         except RuntimeError as e:
-            logger.error(f"Azure storage error: {e}")
+            logger.error(f"Cloud storage error: {e}")
             raise HTTPException(status_code=500, detail="Storage service unavailable")
     else:
         if format == "pptx":
@@ -508,7 +557,13 @@ async def download_presentation(
 
 @app.get("/api/v1/storage/health")
 async def storage_health():
-    if storage_config.is_azure:
+    if storage_config.is_supabase:
+        try:
+            storage_service = await SupabaseStorageService.get_instance()
+            return await storage_service.health_check()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+    elif storage_config.is_azure:
         try:
             storage_service = await AzureBlobService.get_instance()
             return await storage_service.health_check()
