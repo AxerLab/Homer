@@ -13,7 +13,7 @@ ollama_provider = OllamaProvider(base_url=OLLAMA_BASE_URL)
 
 # groq config (cloud API)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_RESEARCH_MODEL_NAME = "llama-3.3-70b-versatile"
+GROQ_RESEARCH_MODEL_NAME = "qwen/qwen3-32b"
 GROQ_SLIDE_MODEL_NAME = "openai/gpt-oss-120b"
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY environment variable is not set.")
