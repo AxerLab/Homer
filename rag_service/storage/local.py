@@ -17,9 +17,10 @@ class RAGLocalStorageService:
     _lock: asyncio.Lock = asyncio.Lock()
 
     def __init__(self) -> None:
-        self._upload_dir: Path = Path(os.getenv("RAG_UPLOAD_DIR", "./rag_uploads"))
-        self._parsed_dir: Path = Path(os.getenv("RAG_PARSER_OUTPUT_DIR", "./rag_parsed"))
-        self._working_dir: Path = Path(os.getenv("RAG_WORKING_DIR", "./rag_storage"))
+        self._base_path: Path = Path(os.getenv("RAG_STORAGE_BASE_DIR", "./rag_base"))
+        self._upload_dir: Path = self._base_path / "rag_uploads"
+        self._parsed_dir: Path = self._base_path / "rag_parsed"
+        self._working_dir: Path = self._base_path / "rag_storage"
 
     @classmethod
     async def get_instance(cls) -> "RAGLocalStorageService":

@@ -42,17 +42,6 @@ class StorageConfig:
         default_factory=lambda: int(os.getenv("AZURE_STORAGE_SAS_EXPIRY_MINUTES", "60"))
     )
 
-    # Supabase Storage Configuration
-    supabase_url: str = field(
-        default_factory=lambda: os.getenv("SUPABASE_URL", "")
-    )
-    supabase_service_key: str = field(
-        default_factory=lambda: os.getenv("SUPABASE_SERVICE_KEY", "")
-    )
-    supabase_bucket: str = field(
-        default_factory=lambda: os.getenv("SUPABASE_STORAGE_BUCKET", "presentations")
-    )
-
     # Local storage paths (fallback)
     local_output_dir: str = field(
         default_factory=lambda: os.getenv("LOCAL_OUTPUT_DIR", "generated_files")
@@ -63,13 +52,6 @@ class StorageConfig:
         """Check if Azure storage is configured and enabled"""
         return self.backend == "azure" and bool(
             self.azure_connection_string or self.azure_account_name
-        )
-
-    @property
-    def is_supabase(self) -> bool:
-        """Check if Supabase storage is configured and enabled"""
-        return self.backend == "supabase" and bool(
-            self.supabase_url and self.supabase_service_key
         )
 
     @property
