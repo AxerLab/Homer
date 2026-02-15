@@ -23,6 +23,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Copy application code
 COPY main.py ./
 COPY core/ ./core/
+COPY storage/ ./storage/
 
 # Create storage directories
 RUN mkdir -p /app/rag_storage /app/rag_parsed /app/rag_uploads

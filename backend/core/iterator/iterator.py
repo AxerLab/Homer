@@ -1,7 +1,7 @@
 from ..models.SliderIterator import SlideIterator
 from ..models.presentation.presentation import SlidePresentation
 from ..models.slide.slide import Slide
-from ..agent.agent import interator_agent
+from ..agent.agent import iterator_agent
 from ...config.logs import logger
 from ..memory.iteration_memory import iteration_memory
 from typing import List, Set
@@ -26,14 +26,12 @@ def _get_context_titles(slides_before: List[Slide] | None, slides_after: List[Sl
 def _filter_context_duplicates(
     generated_slides: List[Slide],
     context_titles: Set[str],
-    original_slide_title: str | None,
 ) -> List[Slide]:
     """Filter out slides that match context slide titles (LLM incorrectly regenerated context)."""
     if not context_titles:
         return generated_slides
 
     filtered = []
-    original_title_lower = (original_slide_title or "").strip().lower()
 
     for slide in generated_slides:
         slide_title_lower = (slide.title or "").strip().lower()
@@ -104,7 +102,7 @@ async def regenerate_slide(
     agent_result = None
     while True:
         try:
-            agent_result = await interator_agent.run(
+            agent_result = await iterator_agent.run(
                 slider_iterator.model_dump_json(),
                 message_history=iteration_memory.get_history(
                     original_prompt=original_prompt, slide_index=slide_index
@@ -132,8 +130,7 @@ async def regenerate_slide(
 
     # Filter out any slides that match context titles (LLM sometimes regenerates context slides)
     context_titles = _get_context_titles(slider_iterator.slides_before, slider_iterator.slides_after)
-    original_title = presentation.slides[slide_index].title
-    filtered_output = _filter_context_duplicates(agent_result.output, context_titles, original_title)
+    filtered_output = _filter_context_duplicates(agent_result.output, context_titles)
 
     updated_slides = presentation.slides.copy()
     updated_slides[slide_index : slide_index + 1] = filtered_output

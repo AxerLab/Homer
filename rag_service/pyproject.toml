@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=22.0,<25.0",
+    "azure-identity>=1.19.0",
+    "azure-storage-blob>=12.24.0",
     "colorlog>=6.9.0",
     "fastapi>=0.121.2",
     "fastembed>=0.3.0",

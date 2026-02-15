@@ -27,7 +27,7 @@ slide_agent = Agent(
     retries=3
 )
 
-interator_agent = Agent(
+iterator_agent = Agent(
     model=cloud_slide_model, 
     tools=[duckduckgo_search_tool(max_results=3)],
     output_type=iterator_output_type,

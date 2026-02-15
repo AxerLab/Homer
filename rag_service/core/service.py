@@ -22,6 +22,7 @@ from rank_bm25 import BM25Okapi
 from PIL import Image
 
 from .config import rag_config
+from storage import get_storage_service
 
 logger = logging.getLogger(__name__)
 
@@ -70,16 +71,36 @@ class RetrievedChunk:
 class RAGService:
     _instance: Optional["RAGService"] = None
 
-    def __new__(cls):
+    _initialized: bool
+    _lock: asyncio.Lock
+    _documents_processed: bool
+    _document_status: dict[str, DocumentProcessingInfo]
+    _document_indexes: dict[str, IndexedDocument]
+    _embedder: Optional[TextEmbedding]
+    _storage: Optional[Any]
+
+    def __init__(self) -> None:
+        if RAGService._instance is not None:
+            return
+        self._initialized = False
+        self._lock = asyncio.Lock()
+        self._documents_processed = False
+        self._document_status = {}
+        self._document_indexes = {}
+        self._embedder = None
+        self._storage = None
+        RAGService._instance = self
+
+    @classmethod
+    def get_instance(cls) -> "RAGService":
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-            cls._instance._lock = asyncio.Lock()
-            cls._instance._documents_processed = False
-            cls._instance._document_status = {}
-            cls._instance._document_indexes = {}
-            cls._instance._embedder = None
+            cls._instance = cls()
         return cls._instance
+
+    async def _get_storage(self):
+        if self._storage is None:
+            self._storage = await get_storage_service()
+        return self._storage
 
     def register_document(self, doc_id: str, filename: str) -> DocumentProcessingInfo:
         info = DocumentProcessingInfo(
@@ -197,7 +218,7 @@ class RAGService:
             self._document_indexes[key] = indexed_doc
             self._documents_processed = True
 
-            await asyncio.to_thread(self._persist_parsed_text, key, text)
+            await self._persist_parsed_text(key, text)
 
             if doc_id:
                 self._update_document_status(doc_id, DocumentStatus.COMPLETED)
@@ -301,21 +322,18 @@ class RAGService:
         synthesized = await self._call_groq(prompt)
         return synthesized if synthesized.strip() else context_text
 
-    def delete_document(self, doc_id: str) -> bool:
+    async def delete_document(self, doc_id: str) -> bool:
         info = self._document_status.get(doc_id)
         if info is None:
             return False
 
-        if info.file_path:
-            file_path = Path(info.file_path)
-            with contextlib.suppress(Exception):
-                if file_path.exists():
-                    file_path.unlink()
+        storage = await self._get_storage()
 
-        parsed_file = rag_config.parser_output_dir / f"{doc_id}.txt"
-        with contextlib.suppress(Exception):
-            if parsed_file.exists():
-                parsed_file.unlink()
+        if info.file_path:
+            filename = Path(info.file_path).name
+            await storage.delete_upload(filename)
+
+        await storage.delete_parsed(doc_id)
 
         self._document_indexes.pop(doc_id, None)
         del self._document_status[doc_id]
@@ -648,9 +666,9 @@ class RAGService:
             logger.warning("Groq synthesis failed: %s", exc)
             return ""
 
-    def _persist_parsed_text(self, doc_id: str, text: str) -> None:
-        output_file = rag_config.parser_output_dir / f"{doc_id}.txt"
-        output_file.write_text(text, encoding="utf-8", errors="ignore")
+    async def _persist_parsed_text(self, doc_id: str, text: str) -> None:
+        storage = await self._get_storage()
+        await storage.save_parsed(doc_id, text)
 
 
 rag_service = RAGService()

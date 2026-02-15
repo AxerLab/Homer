@@ -169,7 +169,7 @@ async def _generate_presentation_impl(
                 failed_attempt_json,
                 error_msg,
                 original_prompt,
-                attempt + 1,
+                attempt,
             )
             logger.debug(
                 f"Strategy for attempt {attempt + 2}: prompt length={len(retry_prompt)}"

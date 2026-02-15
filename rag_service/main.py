@@ -5,13 +5,13 @@ import uuid
 import logging
 from pathlib import Path
 
-import aiofiles
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from core.service import rag_service, DocumentStatus
 from core.config import rag_config
+from storage import get_storage_service
 from core.schemas import (
     RAGQueryRequest,
     RAGQueryResponse,
@@ -70,25 +70,26 @@ async def upload_document(
         )
 
     doc_id = str(uuid.uuid4())
-    file_path = rag_config.upload_dir / f"{doc_id}{file_ext}"
+    storage = await get_storage_service()
+    filename = f"{doc_id}{file_ext}"
 
     try:
-        async with aiofiles.open(file_path, "wb") as f:
-            content = await file.read()
-            file_size = len(content)
-            if file_size > rag_config.max_file_size:
-                raise HTTPException(status_code=400, detail="File too large (max 50MB)")
-            await f.write(content)
+        content = await file.read()
+        file_size = len(content)
+        if file_size > rag_config.max_file_size:
+            raise HTTPException(status_code=400, detail="File too large (max 50MB)")
+        await storage.save_upload(content, filename)
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to save uploaded file: {e}")
         raise HTTPException(status_code=500, detail="Failed to save file")
 
+    file_path = str(storage.get_upload_path(filename))
     rag_service.register_document_with_metadata(
         doc_id=doc_id,
         filename=file.filename,
-        file_path=str(file_path),
+        file_path=file_path,
         file_size_bytes=file_size,
     )
 
@@ -272,7 +273,7 @@ async def delete_document(doc_id: str):
             detail="Cannot delete document while processing. Wait for completion.",
         )
 
-    deleted = rag_service.delete_document(doc_id)
+    deleted = await rag_service.delete_document(doc_id)
     return RAGDocumentDeleteResponse(
         id=doc_id,
         deleted=deleted,
