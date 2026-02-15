@@ -4,28 +4,28 @@
 
   handle /api/* {
     reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
+      # transport http {
+      #   tls
+      #   tls_insecure_skip_verify
+      # }
       header_up Host {upstream_hostport}
     }
   }
   handle /health {
     reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
+      # transport http {
+      #   tls
+      #   tls_insecure_skip_verify
+      # }
       header_up Host {upstream_hostport}
     }
   }
   handle /generated_files/* {
     reverse_proxy {$BACKEND_URL} {
-      transport http {
-        tls
-        tls_insecure_skip_verify
-      }
+      # transport http {
+      #   tls
+      #   tls_insecure_skip_verify
+      # }
       header_up Host {upstream_hostport}
     }
   }
