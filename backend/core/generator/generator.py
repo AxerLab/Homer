@@ -4,7 +4,7 @@ from ..memory.global_memory import global_memory
 from ..models.presentation.presentation import SlidePresentation
 from ..rag.client import rag_client
 from .auto_fix import fix_presentation_dict
-from pydantic_ai import ModelHTTPError
+from pydantic_ai import Agent, ModelHTTPError, FunctionToolCallEvent, FunctionToolResultEvent
 from pydantic_ai.messages import ModelResponse, ToolCallPart, TextPart
 import json
 from typing import Any, Optional
@@ -103,33 +103,38 @@ async def _generate_presentation_impl(
     logger.debug(f"Generating presentation for prompt: {original_prompt}")
 
     agent_slide_result = None
-    agent_research_result = None
+    agent_run_ctx = None
     prompt = original_prompt
     failed_attempt_json = ""
     error_msg = ""
     generation_attempts = 3
 
-    # research step: gather information via tool calls
+    # research step: gather information via tool calls (real-time logging)
     try:
         logger.debug("[Stage 1] research_agent gathering info")
-        agent_research_result = await research_agent.run(
+        async with research_agent.iter(
             prompt,
             message_history=global_memory.get_history(user_prompt=prompt_key),
-        )
+        ) as agent_run:
+            async for node in agent_run:
+                if Agent.is_call_tools_node(node):
+                    async with node.stream(agent_run.ctx) as handle_stream:
+                        async for event in handle_stream:
+                            if isinstance(event, FunctionToolCallEvent):
+                                logger.debug(
+                                    f"[Research] Tool call: {event.part.tool_name}({json.dumps(event.part.args, default=str)[:500]})"
+                                )
+                            elif isinstance(event, FunctionToolResultEvent):
+                                logger.debug(
+                                    f"[Research] Tool result: {event.part.tool_name} -> {str(event.result.content)[:300]}"
+                                )
+        agent_run_ctx = agent_run
     except Exception as e:
         logger.error(f"Unexpected error generating presentation: {e}")
         raise
 
-    for msg in agent_research_result.new_messages():
-        if isinstance(msg, ModelResponse):
-            for part in msg.parts:
-                if isinstance(part, ToolCallPart):
-                    logger.debug(
-                        f"[Research] Tool call: {part.tool_name}({json.dumps(part.args, default=str)[:500]})"
-                    )
-
     # generation step: create presentation based on research and original prompt
-    retry_prompt = f"Slide deck prompt: {prompt}\ncontext: {agent_research_result.output}\n\nNow create the presentation based on the prompt and this context."
+    retry_prompt = f"Slide deck prompt: {prompt}\ncontext: {agent_run_ctx.result.output}\n\nNow create the presentation based on the prompt and this context."
 
     for attempt in range(generation_attempts):
         try:
