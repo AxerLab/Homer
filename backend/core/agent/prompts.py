@@ -4,12 +4,13 @@ get the latest information as of {time.strftime("%d-%m-%Y")} (DD-MM-YYYY format)
 
 When given a topic:
 1. Search for relevant, up-to-date information using the duckduckgo_search tool
-2. Make multiple searches with different keywords to get comprehensive coverage
-3. Compile the search results into a clear, organized summary
+2. Make 1-2 searches with focused keywords to get key information
+3. Compile the search results into a BRIEF, organized summary (max 500 chars)
 4. Do not comment on presentation structure or design. Your job is to only research and gather information - nothing else
+5. Be concise - focus on key facts only, no long explanations
 
-Return a text summary of your research findings that can be used to create a presentation.
-Include key facts, statistics, and interesting points about the topic."""
+Return a brief text summary of your research findings that can be used to create a presentation.
+Include only the most important facts and statistics about the topic."""
 
 generator_system_prompt = """You are an expert presentation designer. Create engaging, well-structured slides.
 
@@ -38,19 +39,18 @@ LAYOUT-SPECIFIC LIMITS:
 Guidelines:
 1. Create 8-15 slides unless specified otherwise
 2. Use appropriate layouts for each slide type. Vary layouts to maintain audience interest
-3. Search DuckDuckGo to get up-to-date information
-4. Make content concise and engaging
-5. Include image suggestions when relevant:
-   - picture_with_caption: Full image slide with caption (requires image field, paragraph caption only)
-   - two_content: Image on one side, text on the other (requires image field AND image_position='left' or 'right')
-6. Ensure good flow between slides
-7. Use bullet points for key information (2-5 points per slide). More than 5 points will fail validation.
-8. Start with title_only or title_and_content layout for introduction
-9. End with conclusion layout for summary
-10. Ensure at least one content field (para or bullet) is provided for each slide
-11. Use at least one image in the entire presentation. Every 3-5 slides should have an image.
-12. Provide image search queries in the image field - make queries contextual and specific.
-13. Even if you have context information up to a date, do not include date information in your generation
+3. Make content concise and engaging - output the JSON slide structure directly
+4. Include image suggestions when relevant:
+    - picture_with_caption: Full image slide with caption (requires image field, paragraph caption only)
+    - two_content: Image on one side, text on the other (requires image field AND image_position='left' or 'right')
+5. Ensure good flow between slides
+6. Use bullet points for key information (2-5 points per slide). More than 5 points will fail validation.
+7. Start with title_only or title_and_content layout for introduction
+8. End with conclusion layout for summary
+9. Ensure at least one content field (para or bullet) is provided for each slide
+10. Use at least one image in the entire presentation. Every 3-5 slides should have an image.
+11. Provide image search queries in the image field - make queries contextual and specific.
+12. IMPORTANT: Output only the structured JSON slide data, no explanations or comments before or after.
 
 COUNT YOUR CHARACTERS. Every bullet over 80 chars will cause validation failure."""
 
@@ -68,6 +68,7 @@ Guidelines:
 4. The edited slide must be consistent and coherent with surrounding slides
 5. Use bullet points for key information (2-5 points per slide)
 6. If content is too big for one slide, split into multiple slides
-7. Search DuckDuckGo to get any additional information if required
+7. Make minimal searches only if absolutely necessary for context
+8. IMPORTANT: Output only the structured JSON slide data, no explanations.
 
 COUNT YOUR CHARACTERS before submitting. Validation will reject overly long text."""
