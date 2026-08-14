@@ -6,14 +6,14 @@ load_dotenv()
 
 # ollama config (local deployments)
 OLLAMA_BASE_URL = "http://localhost:11434/v1"
-OLLAMA_RESEARCH_MODEL_NAME = "qwen/qwen3.6-27b"
-OLLAMA_SLIDE_MODEL_NAME = "qwen/qwen3.6-27b"
+OLLAMA_RESEARCH_MODEL_NAME = "llama-3.3-70b-versatile"
+OLLAMA_SLIDE_MODEL_NAME = "openai/gpt-oss-120b"
 ollama_provider = OllamaProvider(base_url=OLLAMA_BASE_URL)
 
 # groq config (cloud API) - optional
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_RESEARCH_MODEL_NAME = "qwen/qwen3.6-27b"
-GROQ_SLIDE_MODEL_NAME = "qwen/qwen3.6-27b"
+GROQ_RESEARCH_MODEL_NAME = "llama-3.3-70b-versatile"
+GROQ_SLIDE_MODEL_NAME = "openai/gpt-oss-120b"
 
 # Import GroqProvider only if available at runtime. This allows local-only
 # deployments that don't install the `groq` dependency to continue running.
