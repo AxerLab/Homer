@@ -10,23 +10,29 @@ OLLAMA_RESEARCH_MODEL_NAME = "llama-3.3-70b-versatile"
 OLLAMA_SLIDE_MODEL_NAME = "openai/gpt-oss-120b"
 ollama_provider = OllamaProvider(base_url=OLLAMA_BASE_URL)
 
-# groq config (cloud API) - optional
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_RESEARCH_MODEL_NAME = "llama-3.3-70b-versatile"
-GROQ_SLIDE_MODEL_NAME = "openai/gpt-oss-120b"
+# openai config (cloud API) - using gpt-5.6-luna with native output support
+# API key is stored under GROQ_API_KEY for backward compatibility
+OPENAI_API_KEY = os.getenv("GROQ_API_KEY")  # Using GROQ_API_KEY name for backward compatibility
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+OPENAI_RESEARCH_MODEL_NAME = "gpt-5.6-luna"
+OPENAI_SLIDE_MODEL_NAME = "gpt-5.6-luna"
 
-# Import GroqProvider only if available at runtime. This allows local-only
-# deployments that don't install the `groq` dependency to continue running.
+# Import OpenAIModel provider
 try:
-    from pydantic_ai.providers.groq import GroqProvider
-    _GROQ_IMPORT_OK = True
+    from pydantic_ai.models.openai import OpenAIModel
+    _OPENAI_IMPORT_OK = True
 except Exception:
-    GroqProvider = None
-    _GROQ_IMPORT_OK = False
+    OpenAIModel = None
+    _OPENAI_IMPORT_OK = False
 
-if GROQ_API_KEY and _GROQ_IMPORT_OK:
-    model_provider = GroqProvider(api_key=GROQ_API_KEY, base_url="https://api.groq.com/")
+if OPENAI_API_KEY and _OPENAI_IMPORT_OK:
+    # OpenAIModel with native output support enabled
+    model_provider = OpenAIModel(
+        model_name=OPENAI_SLIDE_MODEL_NAME,
+        api_key=OPENAI_API_KEY,
+        base_url=OPENAI_BASE_URL,
+    )
 else:
-    # model_provider will be None when Groq isn't configured/installed; callers
+    # model_provider will be None when OpenAI isn't configured/installed; callers
     # should handle a None provider or fall back to local models.
     model_provider = None
