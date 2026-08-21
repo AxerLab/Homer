@@ -38,7 +38,8 @@ if OPENAI_API_KEY and _OPENAI_IMPORT_OK:
     openai_profile = OpenAIModelProfile(
         supports_tools=True,
         supports_json_object_output=True,
-        openai_supports_strict_tool_definition=True,  # gpt-5.6-luna supports strict mode
+        openai_supports_strict_tool_definition=True, 
+        supports_thinking=False,# gpt-5.6-luna supports strict mode
     )
     
     # Create model with native structured output enabled
