@@ -1,16 +1,19 @@
-# Make Groq model creation optional so imports don't crash when groq isn't installed.
+# OpenAI model configuration (using gpt-5.6-luna with native output support)
+# File kept as groq.py for backward compatibility with imports
+
 try:
-    from pydantic_ai.models.groq import GroqModel
-    _GROQ_MODEL_OK = True
+    from pydantic_ai.models.openai import OpenAIModel
+    _OPENAI_MODEL_OK = True
 except Exception:
-    GroqModel = None
-    _GROQ_MODEL_OK = False
+    OpenAIModel = None
+    _OPENAI_MODEL_OK = False
 
-from ...config.app_config import GROQ_RESEARCH_MODEL_NAME, GROQ_SLIDE_MODEL_NAME, model_provider
+from ...config.app_config import OPENAI_RESEARCH_MODEL_NAME, OPENAI_SLIDE_MODEL_NAME, model_provider
 
-if _GROQ_MODEL_OK and model_provider:
-    research_model = GroqModel(model_name=GROQ_RESEARCH_MODEL_NAME, provider=model_provider)
-    slide_model = GroqModel(model_name=GROQ_SLIDE_MODEL_NAME, provider=model_provider)
+if _OPENAI_MODEL_OK and model_provider:
+    # Use the OpenAI model provider directly (already configured in app_config.py)
+    research_model = model_provider
+    slide_model = model_provider
 else:
     research_model = None
     slide_model = None
