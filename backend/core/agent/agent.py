@@ -12,7 +12,10 @@ from .prompts import (
 from ..models.slide.slide import Slide
 
 # ModelSettings to prevent token limit errors
-model_settings = ModelSettings(max_tokens=8192)
+model_settings = ModelSettings(
+    max_tokens=8192,
+    extra_body={"reasoning_effort": "none"},
+)
 
 research_agent = Agent(
     model=cloud_research_model,
